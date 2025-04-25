@@ -1,0 +1,15 @@
+token,name,value
+color,Primary,#181A24
+color,Accent,#6C5CE7
+color,Background,#0E0F14
+color,TextPrimary,#FFFFFF
+color,TextSecondary,#A4A6AD
+radius,Card,16
+shadow,Focus,0 0 10 2 rgba(108,92,231,0.7)
+spacing,XS,4
+spacing,S,8
+spacing,M,16
+spacing,L,24
+font,Display,36
+font,Heading,28
+font,Body,16

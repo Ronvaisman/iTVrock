@@ -1,0 +1,10 @@
+key,string
+sidebar_channels,Channels
+sidebar_movies,Movies
+sidebar_shows,TV Shows
+sidebar_guide,TV Guide
+sidebar_favourites,Favourites
+sidebar_settings,Settings
+btn_play,Play
+btn_resume,Resume
+dialog_add_playlist,Add Playlist
