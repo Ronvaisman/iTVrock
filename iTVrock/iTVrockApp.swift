@@ -13,6 +13,7 @@ struct iTVrockApp: App {
     @StateObject private var playlistManager = PlaylistManager()
     @StateObject private var favoriteManager = FavoriteManager()
     @StateObject private var vodManager = VODManager()
+    @StateObject private var epgManager = EPGManager()
     
     var body: some Scene {
         WindowGroup {
@@ -22,6 +23,7 @@ struct iTVrockApp: App {
                     .environmentObject(playlistManager)
                     .environmentObject(favoriteManager)
                     .environmentObject(vodManager)
+                    .environmentObject(epgManager)
             } else {
                 ProfileSelectionView()
                     .environmentObject(profileManager)

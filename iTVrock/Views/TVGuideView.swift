@@ -2,10 +2,11 @@ import SwiftUI
 
 struct TVGuideView: View {
     @EnvironmentObject var playlistManager: PlaylistManager
+    @EnvironmentObject var epgManager: EPGManager
     
     @State private var selectedDate = Date()
     @State private var timeSlotWidth: CGFloat = 200
-    @State private var selectedProgram: Program?
+    @State private var selectedProgram: EPGProgram?
     @State private var searchText = ""
     
     private let timeSlotDuration: TimeInterval = 30 * 60 // 30 minutes
@@ -43,8 +44,10 @@ struct TVGuideView: View {
             ScrollView([.horizontal, .vertical]) {
                 VStack(spacing: 0) {
                     ForEach(filteredChannels) { channel in
+                        let epgId = channel.tvgId ?? channel.name // fallback to name if no tvgId
                         ChannelRow(
                             channel: channel,
+                            epgChannelId: epgId,
                             startTime: Calendar.current.startOfDay(for: selectedDate),
                             slotWidth: timeSlotWidth,
                             slotDuration: timeSlotDuration,
@@ -145,12 +148,15 @@ struct TimeScaleView: View {
 
 struct ChannelRow: View {
     let channel: Channel
+    let epgChannelId: String?
     let startTime: Date
     let slotWidth: CGFloat
     let slotDuration: TimeInterval
     let numberOfSlots: Int
     let rowHeight: CGFloat
-    let onProgramSelected: (Program) -> Void
+    let onProgramSelected: (EPGProgram) -> Void
+    
+    @EnvironmentObject var epgManager: EPGManager
     
     var body: some View {
         HStack(spacing: 0) {
@@ -180,12 +186,13 @@ struct ChannelRow: View {
         }
     }
     
-    private func findProgram(at time: Date) -> Program? {
-        channel.currentProgram // TODO: Implement actual program finding logic
+    private func findProgram(at time: Date) -> EPGProgram? {
+        guard let epgChannelId = epgChannelId else { return nil }
+        return epgManager.programs.first { $0.channelId == epgChannelId && $0.start <= time && $0.stop > time }
     }
     
-    private func calculateProgramWidth(_ program: Program) -> CGFloat {
-        let duration = program.endTime.timeIntervalSince(program.startTime)
+    private func calculateProgramWidth(_ program: EPGProgram) -> CGFloat {
+        let duration = program.stop.timeIntervalSince(program.start)
         let slots = duration / slotDuration
         return slotWidth * slots
     }
@@ -224,8 +231,8 @@ struct ChannelInfo: View {
 }
 
 struct ProgramCell: View {
-    let program: Program
-    let onSelect: (Program) -> Void
+    let program: EPGProgram
+    let onSelect: (EPGProgram) -> Void
     @State private var isFocused = false
     
     var body: some View {
@@ -241,7 +248,7 @@ struct ProgramCell: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Text(program.startTime.formatted(.dateTime.hour().minute()))
+                Text(program.start.formatted(.dateTime.hour().minute()))
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
@@ -265,7 +272,7 @@ struct ProgramCell: View {
 }
 
 struct ProgramDetailView: View {
-    let program: Program
+    let program: EPGProgram
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -288,8 +295,8 @@ struct ProgramDetailView: View {
                 }
             }
             
-            if let description = program.description {
-                Text(description)
+            if let desc = program.desc {
+                Text(desc)
                     .foregroundColor(.secondary)
             }
             
@@ -297,7 +304,7 @@ struct ProgramDetailView: View {
                 VStack(alignment: .leading) {
                     Text("Start Time")
                         .font(.headline)
-                    Text(program.startTime.formatted(.dateTime.hour().minute()))
+                    Text(program.start.formatted(.dateTime.hour().minute()))
                 }
                 
                 Spacer()
@@ -305,19 +312,8 @@ struct ProgramDetailView: View {
                 VStack(alignment: .leading) {
                     Text("End Time")
                         .font(.headline)
-                    Text(program.endTime.formatted(.dateTime.hour().minute()))
+                    Text(program.stop.formatted(.dateTime.hour().minute()))
                 }
-            }
-            
-            if let rating = program.rating {
-                Text("Rating: \(rating)")
-                    .font(.headline)
-            }
-            
-            if program.isNew {
-                Text("New Episode")
-                    .font(.headline)
-                    .foregroundColor(.blue)
             }
             
             Spacer()
