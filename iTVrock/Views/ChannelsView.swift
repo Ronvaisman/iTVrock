@@ -260,6 +260,11 @@ struct ChannelPlayerView: View {
     let channel: Channel
     let onClose: () -> Void
     @State private var player: AVPlayer? = nil
+    @State private var isPlaying: Bool = true
+    @State private var showInfo: Bool = false
+    @State private var volume: Float = 0.8
+    @State private var showControls: Bool = true
+    @Environment(\.presentationMode) private var presentationMode
     
     private var selectedEngine: PlayerEngine {
         if let saved = UserDefaults.standard.string(forKey: "selectedPlayerEngine"),
@@ -270,11 +275,32 @@ struct ChannelPlayerView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            playerHeader
-            playerContent
+        ZStack {
+            // Black background for full screen
+            Color.black.ignoresSafeArea()
+            
+            // Main content
+            VStack(spacing: 0) {
+                // Only show header if controls are visible
+                if showControls {
+                    playerHeader
+                }
+                
+                // Player and controls
+                playerContent
+                    .edgesIgnoringSafeArea(.all)
+            }
         }
-        .frame(width: 900, height: 600)
+        .background(Color.black.ignoresSafeArea())
+        .onTapGesture {
+            withAnimation {
+                showControls.toggle()
+            }
+        }
+        // Handle back button on remote
+        .onExitCommand {
+            onClose()
+        }
     }
     
     private var playerHeader: some View {
@@ -283,69 +309,240 @@ struct ChannelPlayerView: View {
                 .font(.title2)
                 .padding()
             Spacer()
-            Button(action: onClose) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title)
-                    .padding()
-            }
         }
-        .background(Color.secondary.opacity(0.1))
+        .background(Color.black.opacity(0.7))
+        .transition(.move(edge: .top))
     }
     
     private var playerContent: some View {
-        Group {
-            switch selectedEngine {
-            case .apple, .auto:
-                applePlayerView
-            case .vlc:
-                vlcPlayerView
-            case .ksplayer:
-                Text("KSPlayer integration coming soon.")
-                    .foregroundColor(.orange)
-                    .padding()
-            case .mpv:
-                Text("MPV Player integration coming soon.")
-                    .foregroundColor(.orange)
-                    .padding()
-            case .cancel:
-                Text("No player selected.")
-                    .foregroundColor(.gray)
-                    .padding()
+        ZStack {
+            // Player
+            Group {
+                switch selectedEngine {
+                case .apple, .auto:
+                    applePlayerView
+                case .vlc:
+                    vlcPlayerView
+                case .ksplayer:
+                    Text("KSPlayer integration coming soon.")
+                        .foregroundColor(.orange)
+                        .padding()
+                case .mpv:
+                    Text("MPV Player integration coming soon.")
+                        .foregroundColor(.orange)
+                        .padding()
+                case .cancel:
+                    Text("No player selected.")
+                        .foregroundColor(.gray)
+                        .padding()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            // Controls overlay
+            if showControls {
+                VStack {
+                    Spacer()
+                    
+                    // Stream info overlay
+                    if showInfo {
+                        streamInfoOverlay
+                    }
+                    
+                    // Controls bar
+                    playerControlsBar
+                        .transition(.move(edge: .bottom))
+                }
+                .transition(.opacity)
             }
         }
+    }
+    
+    private var streamInfoOverlay: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Channel: \(channel.name)")
+                .font(.headline)
+            Text("Category: \(channel.category)")
+            if let currentProgram = channel.currentProgram {
+                Text("Now playing: \(currentProgram.title)")
+                if let description = currentProgram.description {
+                    Text(description)
+                        .font(.caption)
+                }
+            }
+            Text("Stream URL: \(channel.streamUrl)")
+                .font(.caption)
+                .lineLimit(1)
+        }
+        .padding()
+        .background(Color.black.opacity(0.7))
+        .cornerRadius(8)
+        .padding()
+    }
+    
+    private var playerControlsBar: some View {
+        HStack(spacing: 60) {
+            // Play/Pause
+            Button(action: togglePlayPause) {
+                Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    .font(.system(size: 48))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            
+            // Stop
+            Button(action: stopPlayback) {
+                Image(systemName: "stop.circle.fill")
+                    .font(.system(size: 48))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+            
+            // Volume controls - tvOS friendly
+            HStack(spacing: 30) {
+                Button(action: decreaseVolume) {
+                    Image(systemName: "speaker.wave.1.fill")
+                        .font(.system(size: 40))
+                }
+                .buttonStyle(.plain)
+                
+                Text("\(Int(volume * 100))%")
+                    .font(.title2)
+                
+                Button(action: increaseVolume) {
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.system(size: 40))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            
+            // Info button
+            Button(action: { showInfo.toggle() }) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 48))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 30)
+        .padding(.horizontal, 40)
+        .background(Color.black.opacity(0.6))
+    }
+    
+    private func togglePlayPause() {
+        isPlaying.toggle()
+        if isPlaying {
+            player?.play()
+        } else {
+            player?.pause()
+        }
+    }
+    
+    private func stopPlayback() {
+        player?.pause()
+        player?.seek(to: .zero)
+        isPlaying = false
+    }
+    
+    private func updateVolume() {
+        player?.volume = volume
+    }
+    
+    private func increaseVolume() {
+        volume = min(1.0, volume + 0.1)
+        updateVolume()
+    }
+    
+    private func decreaseVolume() {
+        volume = max(0.0, volume - 0.1)
+        updateVolume()
     }
     
     private var applePlayerView: some View {
         Group {
-            if let url = URL(string: channel.streamUrl) {
+            // Try to create a valid URL from the stream
+            let validUrl = getValidStreamUrl(from: channel.streamUrl)
+            
+            if let url = validUrl {
                 VideoPlayer(player: AVPlayer(url: url))
                     .onAppear {
                         player = AVPlayer(url: url)
-                        player?.play()
+                        player?.volume = volume
+                        if isPlaying {
+                            player?.play()
+                        }
                     }
                     .onDisappear {
                         player?.pause()
                         player = nil
                     }
             } else {
-                Text("Invalid stream URL")
-                    .foregroundColor(.red)
-                    .padding()
+                invalidStreamView
             }
         }
     }
     
     private var vlcPlayerView: some View {
         Group {
-            if let url = URL(string: channel.streamUrl) {
+            // Try to create a valid URL from the stream
+            let validUrl = getValidStreamUrl(from: channel.streamUrl)
+            
+            if let url = validUrl {
                 VLCPlayerView(url: url)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Text("Invalid stream URL")
-                    .foregroundColor(.red)
-                    .padding()
+                invalidStreamView
             }
         }
+    }
+    
+    private var invalidStreamView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.red)
+            
+            Text("Invalid stream URL")
+                .font(.title)
+                .foregroundColor(.red)
+            
+            Text("Cannot play: \(channel.streamUrl)")
+                .font(.callout)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("Check that your playlist contains valid stream URLs and try again.")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+        }
+        .padding()
+    }
+    
+    // Helper function to validate and format stream URLs
+    private func getValidStreamUrl(from urlString: String) -> URL? {
+        // Try to create URL directly
+        if let url = URL(string: urlString) {
+            return url
+        }
+        
+        // Handle common issues with URLs
+        var fixedString = urlString
+        
+        // Fix missing scheme
+        if !urlString.starts(with: "http://") && !urlString.starts(with: "https://") {
+            fixedString = "http://" + urlString
+        }
+        
+        // Try with percent encoding for special characters
+        let allowedCharSet = CharacterSet.urlQueryAllowed
+        if let encodedString = fixedString.addingPercentEncoding(withAllowedCharacters: allowedCharSet) {
+            return URL(string: encodedString)
+        }
+        
+        return nil
     }
 }
 
