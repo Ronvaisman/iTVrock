@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TVShowsView: View {
-    @EnvironmentObject var playlistManager: PlaylistManager
+    @EnvironmentObject var vodManager: VODManager
     @EnvironmentObject var favoriteManager: FavoriteManager
     
     @State private var selectedCategory: String?
@@ -11,14 +11,14 @@ struct TVShowsView: View {
     private let columns = Array(repeating: GridItem(.adaptive(minimum: 200), spacing: 20), count: 5)
     
     private var categories: [String] {
-        var cats = Set(playlistManager.shows.map { $0.category })
+        var cats = Set(vodManager.shows.map { $0.category })
         cats.insert("All Shows")
         cats.insert("Favorites")
         return Array(cats).sorted()
     }
     
     private var filteredShows: [TVShow] {
-        var shows = playlistManager.shows
+        var shows = vodManager.shows
         
         // Apply category filter
         if let category = selectedCategory {
@@ -73,7 +73,7 @@ struct TVShowsView: View {
                     .padding()
                     
                     ScrollView {
-                        if playlistManager.shows.isEmpty {
+                        if vodManager.shows.isEmpty {
                             VStack(spacing: 20) {
                                 Image(systemName: "play.tv")
                                     .font(.system(size: 60))
@@ -333,8 +333,7 @@ extension TimeInterval {
 struct TVShowsView_Previews: PreviewProvider {
     static var previews: some View {
         TVShowsView()
-            .environmentObject(PlaylistManager())
-            .environmentObject(FavoriteManager())
             .environmentObject(VODManager())
+            .environmentObject(FavoriteManager())
     }
 } 

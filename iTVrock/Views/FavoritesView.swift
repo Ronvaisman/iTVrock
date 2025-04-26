@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FavoritesView: View {
     @EnvironmentObject var playlistManager: PlaylistManager
+    @EnvironmentObject var vodManager: VODManager
     @EnvironmentObject var favoriteManager: FavoriteManager
     @EnvironmentObject var profileManager: ProfileManager
     
@@ -31,11 +32,11 @@ struct FavoritesView: View {
                 return channel.name.localizedCaseInsensitiveContains(searchText)
             }
         case .movie:
-            if let movie = playlistManager.movies.first(where: { $0.id == favorite.itemId }) {
+            if let movie = vodManager.movies.first(where: { $0.id == favorite.itemId }) {
                 return movie.title.localizedCaseInsensitiveContains(searchText)
             }
         case .show:
-            if let show = playlistManager.shows.first(where: { $0.id == favorite.itemId }) {
+            if let show = vodManager.shows.first(where: { $0.id == favorite.itemId }) {
                 return show.title.localizedCaseInsensitiveContains(searchText)
             }
         }
@@ -92,6 +93,7 @@ struct FavoritesView: View {
 struct FavoriteCell: View {
     let favorite: Favorite
     @EnvironmentObject var playlistManager: PlaylistManager
+    @EnvironmentObject var vodManager: VODManager
     @EnvironmentObject var favoriteManager: FavoriteManager
     @State private var isFocused = false
     
@@ -122,7 +124,7 @@ struct FavoriteCell: View {
                         }
                         
                     case .movie:
-                        if let movie = playlistManager.movies.first(where: { $0.id == favorite.itemId }),
+                        if let movie = vodManager.movies.first(where: { $0.id == favorite.itemId }),
                            let posterUrl = movie.posterUrl {
                             AsyncImage(url: URL(string: posterUrl)) { image in
                                 image
@@ -140,7 +142,7 @@ struct FavoriteCell: View {
                         }
                         
                     case .show:
-                        if let show = playlistManager.shows.first(where: { $0.id == favorite.itemId }),
+                        if let show = vodManager.shows.first(where: { $0.id == favorite.itemId }),
                            let posterUrl = show.posterUrl {
                             AsyncImage(url: URL(string: posterUrl)) { image in
                                 image
@@ -208,9 +210,9 @@ struct FavoriteCell: View {
         case .channel:
             return playlistManager.channels.first { $0.id == favorite.itemId }?.name ?? "Unknown Channel"
         case .movie:
-            return playlistManager.movies.first { $0.id == favorite.itemId }?.title ?? "Unknown Movie"
+            return vodManager.movies.first { $0.id == favorite.itemId }?.title ?? "Unknown Movie"
         case .show:
-            return playlistManager.shows.first { $0.id == favorite.itemId }?.title ?? "Unknown Show"
+            return vodManager.shows.first { $0.id == favorite.itemId }?.title ?? "Unknown Show"
         }
     }
     
@@ -223,12 +225,12 @@ struct FavoriteCell: View {
             }
             return "Live TV"
         case .movie:
-            if let movie = playlistManager.movies.first(where: { $0.id == favorite.itemId }) {
+            if let movie = vodManager.movies.first(where: { $0.id == favorite.itemId }) {
                 return movie.year.map { String($0) } ?? "Movie"
             }
             return "Movie"
         case .show:
-            if let show = playlistManager.shows.first(where: { $0.id == favorite.itemId }) {
+            if let show = vodManager.shows.first(where: { $0.id == favorite.itemId }) {
                 return "\(show.seasons.count) Season\(show.seasons.count == 1 ? "" : "s")"
             }
             return "TV Show"
@@ -290,6 +292,7 @@ struct FavoritesView_Previews: PreviewProvider {
     static var previews: some View {
         FavoritesView()
             .environmentObject(PlaylistManager())
+            .environmentObject(VODManager())
             .environmentObject(FavoriteManager())
             .environmentObject(ProfileManager())
     }

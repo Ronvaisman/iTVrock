@@ -161,6 +161,9 @@ struct AddPlaylistView: View {
         // For now, just add it to the manager
         playlistManager.playlists.append(playlist)
         
+        // Simulate parsing and distributing content
+        playlistManager.parseAndDistributeContent(from: playlist)
+        
         // Simulate loading
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             isLoading = false

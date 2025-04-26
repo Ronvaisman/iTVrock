@@ -16,7 +16,7 @@ struct iTVrockApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if let currentProfile = profileManager.currentProfile {
+            if profileManager.currentProfile != nil {
                 MainTabView()
                     .environmentObject(profileManager)
                     .environmentObject(playlistManager)
@@ -49,10 +49,89 @@ class ProfileManager: ObservableObject {
 class PlaylistManager: ObservableObject {
     @Published var playlists: [Playlist] = []
     @Published var channels: [Channel] = []
-    @Published var movies: [Movie] = []
-    @Published var shows: [TVShow] = []
     
-    // TODO: Implement playlist management and content loading
+    weak var vodManager: VODManager?
+    
+    // Simulated parser: splits playlist into channels, movies, and shows
+    func parseAndDistributeContent(from playlist: Playlist) {
+        // Simulate multiple channels
+        let sampleChannels = (1...5).map { i in
+            Channel(
+                id: UUID().uuidString,
+                name: "Channel \(i)",
+                category: ["News", "Sports", "Kids", "Movies", "Music"][i % 5],
+                streamUrl: "https://example.com/stream\(i).m3u8",
+                logoUrl: nil,
+                tvgId: nil,
+                playlistId: playlist.id
+            )
+        }
+        // Simulate multiple movies
+        let sampleMovies = (1...6).map { i in
+            Movie(
+                id: UUID().uuidString,
+                title: "Movie \(i)",
+                description: "A simulated movie #\(i) from playlist",
+                posterUrl: nil,
+                category: ["Drama", "Action", "Comedy", "Horror", "Sci-Fi", "Documentary"][i % 6],
+                playlistId: playlist.id,
+                streamUrl: "https://example.com/movie\(i).mp4",
+                duration: 5400 + Double(i * 300),
+                rating: ["PG", "PG-13", "R", nil][i % 4],
+                year: 2020 + i,
+                addedDate: Date(),
+                tmdbId: nil,
+                cast: nil,
+                director: nil,
+                imdbRating: nil
+            )
+        }
+        // Simulate multiple shows with seasons and episodes
+        let sampleShows = (1...3).map { i in
+            TVShow(
+                id: UUID().uuidString,
+                title: "Show \(i)",
+                description: "A simulated show #\(i) from playlist",
+                posterUrl: nil,
+                category: ["Comedy", "Drama", "Kids"][i % 3],
+                playlistId: playlist.id,
+                rating: ["TV-G", "TV-14", nil][i % 3],
+                year: 2018 + i,
+                seasons: (1...2).map { seasonNum in
+                    TVShow.Season(
+                        number: seasonNum,
+                        episodes: (1...4).map { epNum in
+                            Episode(
+                                id: UUID().uuidString,
+                                title: "S\(seasonNum)E\(epNum) - Episode Title",
+                                description: "Description for episode \(epNum) of season \(seasonNum)",
+                                seasonNumber: seasonNum,
+                                episodeNumber: epNum,
+                                streamUrl: "https://example.com/show\(i)s\(seasonNum)e\(epNum).mp4",
+                                thumbnailUrl: nil,
+                                duration: 1800 + Double(epNum * 60),
+                                airDate: Calendar.current.date(byAdding: .day, value: -epNum, to: Date())
+                            )
+                        }
+                    )
+                },
+                tmdbId: nil
+            )
+        }
+        // Update channels
+        self.channels.append(contentsOf: sampleChannels)
+        // Update VODManager
+        vodManager?.updateContent(from: playlist, movies: sampleMovies, shows: sampleShows)
+    }
+    
+    // Notify when content is updated
+    var onContentUpdated: (() -> Void)?
+    
+    func updateContent(from playlist: Playlist) {
+        // TODO: Parse playlist content
+        // For now, just print for debugging
+        print("Updating content from playlist: \(playlist.name)")
+    }
 }
 
 class FavoriteManager: ObservableObject {

@@ -4,6 +4,7 @@ struct MainTabView: View {
     @EnvironmentObject var profileManager: ProfileManager
     @EnvironmentObject var playlistManager: PlaylistManager
     @EnvironmentObject var favoriteManager: FavoriteManager
+    @EnvironmentObject var vodManager: VODManager
     
     @State private var selectedTab = 0
     
@@ -48,6 +49,7 @@ struct MainTabView: View {
         .onAppear {
             // Configure appearance for tvOS
             UITabBar.appearance().isTranslucent = true
+            playlistManager.vodManager = vodManager
         }
     }
 }
@@ -59,5 +61,6 @@ struct MainTabView_Previews: PreviewProvider {
             .environmentObject(ProfileManager())
             .environmentObject(PlaylistManager())
             .environmentObject(FavoriteManager())
+            .environmentObject(VODManager())
     }
 } 
