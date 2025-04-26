@@ -1,5 +1,12 @@
 import SwiftUI
 
+// MARK: - Models for passing around movie data
+private struct IndexedMovie: Identifiable {
+    let index: Int
+    let movie: Movie
+    var id: String { movie.id }
+}
+
 struct MoviesView: View {
     @EnvironmentObject var vodManager: VODManager
     @EnvironmentObject var favoriteManager: FavoriteManager
@@ -7,7 +14,7 @@ struct MoviesView: View {
     @State private var selectedCategory: String?
     @State private var selectedMovie: Movie? = nil
     @State private var isSidebarVisible: Bool = false
-    @FocusState private var focusedMovieId: String?
+    @State private var focusedMovieIndex: Int? = nil
     
     private var categories: [String] {
         let movies = vodManager.movies
@@ -45,7 +52,7 @@ struct MoviesView: View {
                 filteredMovies: getFilteredMovies(),
                 isSidebarVisible: $isSidebarVisible,
                 selectedMovie: $selectedMovie,
-                focusedMovieId: $focusedMovieId
+                focusedMovieIndex: $focusedMovieIndex
             )
             
             // Sidebar
@@ -72,10 +79,8 @@ struct MoviesView: View {
         }
         .onMoveCommand { direction in
             if direction == .down {
-                let filteredMovies = getFilteredMovies()
-                if let firstMovie = filteredMovies.first {
-                    focusedMovieId = firstMovie.id
-                }
+                // Focus the first movie when pressing down
+                focusedMovieIndex = 0
             }
         }
     }
@@ -86,29 +91,22 @@ struct MovieGridContent: View {
     let filteredMovies: [Movie]
     @Binding var isSidebarVisible: Bool
     @Binding var selectedMovie: Movie?
-    @Binding var focusedMovieId: String?
+    @Binding var focusedMovieIndex: Int?
+    
+    // Convert the movies into a simpler array for the ForEach
+    private var indexedMovies: [IndexedMovie] {
+        filteredMovies.enumerated().map { IndexedMovie(index: $0.offset, movie: $0.element) }
+    }
+    
+    // Use FocusState to track which movie is focused
+    @FocusState private var focusedMovieId: String?
     
     var body: some View {
         VStack {
             if filteredMovies.isEmpty {
-                ContentUnavailableView(
-                    "No Movies Found",
-                    systemImage: "film",
-                    description: Text("Try adjusting your search or category filter")
-                )
+                noMoviesView
             } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 200))], spacing: 20) {
-                        ForEach(filteredMovies) { movie in
-                            MovieCell(movie: movie, isFocused: focusedMovieId == movie.id) {
-                                print("Selected movie: \(movie.title)")
-                                selectedMovie = movie
-                            }
-                            .focused($focusedMovieId, equals: movie.id)
-                        }
-                    }
-                    .padding()
-                }
+                moviesGridView
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -118,6 +116,53 @@ struct MovieGridContent: View {
                 withAnimation { isSidebarVisible = true }
             }
         }
+        // Sync focusedMovieId with parent's focusedMovieIndex
+        .onChange(of: focusedMovieId) { newValue in
+            if let newId = newValue, 
+               let index = indexedMovies.firstIndex(where: { $0.id == newId }) {
+                focusedMovieIndex = index
+            }
+        }
+        .onChange(of: focusedMovieIndex) { newValue in
+            if let index = newValue, index < indexedMovies.count {
+                focusedMovieId = indexedMovies[index].id
+            }
+        }
+    }
+    
+    // Break up the view into smaller components
+    private var noMoviesView: some View {
+        ContentUnavailableView(
+            "No Movies Found",
+            systemImage: "film",
+            description: Text("Try adjusting your search or category filter")
+        )
+    }
+    
+    private var moviesGridView: some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200))], spacing: 20) {
+                // Instead of using Array enumeration inline, use the pre-computed array
+                ForEach(indexedMovies) { indexedMovie in
+                    createMovieCell(for: indexedMovie)
+                }
+            }
+            .padding()
+        }
+    }
+    
+    // Create a movie cell for an indexed movie
+    private func createMovieCell(for indexedMovie: IndexedMovie) -> some View {
+        let movie = indexedMovie.movie
+        let index = indexedMovie.index
+        let isFocused = index == focusedMovieIndex
+        
+        return MovieCell(movie: movie, isFocused: isFocused) {
+            print("Selected movie: \(movie.title)")
+            selectedMovie = movie
+        }
+        .id(movie.id)
+        .focused($focusedMovieId, equals: movie.id)
     }
 }
 
@@ -130,26 +175,10 @@ struct MovieSidebar: View {
     var body: some View {
         VStack(spacing: 2) {
             // Hide sidebar button
-            Button(action: { withAnimation { isSidebarVisible = false } }) {
-                Image(systemName: "chevron.left")
-                    .padding()
-            }
-            .buttonStyle(.plain)
-            ForEach(categories, id: \.self) { category in
-                Button(action: { selectedCategory = category }) {
-                    HStack {
-                        Text(category)
-                            .font(.title3)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(selectedCategory == category ? Color.secondary.opacity(0.2) : Color.clear)
-                }
-                .buttonStyle(.plain)
-                .focusable(true)
-            }
-            Spacer()
+            sidebarCloseButton
+            
+            // Category list
+            categoriesList
         }
         .frame(width: 300)
         .background(Color(.darkGray))
@@ -162,57 +191,105 @@ struct MovieSidebar: View {
             }
         }
     }
+    
+    private var sidebarCloseButton: some View {
+        Button(action: { withAnimation { isSidebarVisible = false } }) {
+            Image(systemName: "chevron.left")
+                .padding()
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var categoriesList: some View {
+        VStack(spacing: 2) {
+            ForEach(categories, id: \.self) { category in
+                categoryButton(for: category)
+            }
+            Spacer()
+        }
+    }
+    
+    private func categoryButton(for category: String) -> some View {
+        Button(action: { selectedCategory = category }) {
+            HStack {
+                Text(category)
+                    .font(.title3)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(selectedCategory == category ? Color.secondary.opacity(0.2) : Color.clear)
+        }
+        .buttonStyle(.plain)
+        .focusable(true)
+    }
 }
 
 struct MovieCell: View {
     let movie: Movie
     let isFocused: Bool
     let onSelect: () -> Void
-    @Environment(\.isFocused) private var isEnvironmentFocused
     
     var body: some View {
         Button(action: onSelect) {
             VStack {
-                // Movie Poster
-                if let posterUrl = movie.posterUrl {
-                    AsyncImage(url: URL(string: posterUrl)) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(2/3, contentMode: .fit)
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.secondary.opacity(0.2))
-                            .aspectRatio(2/3, contentMode: .fit)
-                            .overlay(
-                                Image(systemName: "film")
-                                    .font(.largeTitle)
-                                    .foregroundColor(.secondary)
-                            )
-                    }
-                } else {
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.2))
-                        .aspectRatio(2/3, contentMode: .fit)
-                        .overlay(
-                            Image(systemName: "film")
-                                .font(.largeTitle)
-                                .foregroundColor(.secondary)
-                        )
-                }
-                
-                Text(movie.title)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
+                posterView
+                movieTitle
             }
             .padding(8)
-            .background((isEnvironmentFocused || isFocused) ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.1))
+            .background(isFocused ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.1))
             .cornerRadius(10)
-            .scaleEffect((isEnvironmentFocused || isFocused) ? 1.05 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: isEnvironmentFocused || isFocused)
+            .scaleEffect(isFocused ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isFocused)
         }
-        .buttonStyle(.plain)
-        .focusable()
+        .buttonStyle(.cardButton)
+    }
+    
+    private var posterView: some View {
+        Group {
+            if let posterUrl = movie.posterUrl {
+                AsyncImage(url: URL(string: posterUrl)) { image in
+                    image.resizable().aspectRatio(2/3, contentMode: .fit)
+                } placeholder: {
+                    posterPlaceholder
+                }
+            } else {
+                posterPlaceholder
+            }
+        }
+    }
+    
+    private var posterPlaceholder: some View {
+        Rectangle()
+            .fill(Color.secondary.opacity(0.2))
+            .aspectRatio(2/3, contentMode: .fit)
+            .overlay(
+                Image(systemName: "film")
+                    .font(.largeTitle)
+                    .foregroundColor(.secondary)
+            )
+    }
+    
+    private var movieTitle: some View {
+        Text(movie.title)
+            .font(.headline)
+            .lineLimit(2)
+            .multilineTextAlignment(.center)
+    }
+}
+
+// Custom button style to make it work better on tvOS
+struct CardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+extension ButtonStyle where Self == CardButtonStyle {
+    static var cardButton: CardButtonStyle {
+        CardButtonStyle()
     }
 }
 
