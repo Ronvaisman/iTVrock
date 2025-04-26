@@ -142,6 +142,13 @@ struct MovieSidebar: View {
         .frame(width: 300)
         .background(Color(.darkGray))
         .transition(.move(edge: .leading))
+        .onMoveCommand { direction in
+            if direction == .right {
+                withAnimation {
+                    isSidebarVisible = false
+                }
+            }
+        }
     }
 }
 
