@@ -1,347 +1,456 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @EnvironmentObject var playlistManager: PlaylistManager
-    @EnvironmentObject var profileManager: ProfileManager
-    @State private var selectedSection = SettingsSection.playlists
+    @State private var showM3UConfig = false
+    @State private var showXtreamConfig = false
+    @State private var showProfileSheet = false
     
-    private enum SettingsSection: String, CaseIterable {
-        case playlists = "Playlists"
-        case profiles = "Profiles"
-        case parentalControls = "Parental Controls"
-        case preferences = "Preferences"
-        
-        var icon: String {
-            switch self {
-            case .playlists: return "list.bullet"
-            case .profiles: return "person.circle"
-            case .parentalControls: return "lock.shield"
-            case .preferences: return "gear"
-            }
-        }
+    enum SettingsRow: Hashable {
+        case m3u, xtream, profile
     }
     
+    @FocusState private var focusedRow: SettingsRow?
+    
     var body: some View {
-        HStack(spacing: 0) {
-            // Sidebar
-            VStack(spacing: 16) {
-                ForEach(SettingsSection.allCases, id: \.self) { section in
-                    Button(action: { selectedSection = section }) {
-                        HStack {
-                            Image(systemName: section.icon)
-                                .frame(width: 30)
-                            Text(section.rawValue)
-                                .font(.caption)
-                            Spacer()
+        VStack(alignment: .center, spacing: 30) {
+            Text("Settings")
+                .font(.largeTitle)
+                .padding(.horizontal)
+            
+            HStack {
+                Spacer()
+                List {
+                    Section(header: Text("Stream Sources").font(.title2)) {
+                        Button(action: {
+                            print("Remote List (M3U) button pressed")
+                            showM3UConfig = true
+                        }) {
+                            Label("Remote List (M3U)", systemImage: "doc.text")
                         }
-                        .padding(.horizontal)
-                        .padding(.vertical, 12)
-                        .background(selectedSection == section ? Color.secondary.opacity(0.2) : Color.clear)
-                        .cornerRadius(8)
+                        .sheet(isPresented: $showM3UConfig) {
+                            M3UConfigView()
+                        }
+                        .onChange(of: showM3UConfig) {
+                            print("showM3UConfig changed to", showM3UConfig)
+                        }
+                        
+                        Button(action: { showXtreamConfig = true }) {
+                            Label("Xtream", systemImage: "server.rack")
+                        }
+                        .sheet(isPresented: $showXtreamConfig) {
+                            XtreamConfigView()
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .focusable(true)
-                }
-                Spacer()
-            }
-            .frame(width: 300)
-            .padding(.vertical)
-            .background(Color.secondary.opacity(0.1))
-            
-            // Content
-            ScrollView {
-                VStack(alignment: .leading, spacing: 30) {
-                    Text(selectedSection.rawValue)
-                        .font(.largeTitle)
-                        .padding(.horizontal)
-                    
-                    switch selectedSection {
-                    case .playlists:
-                        PlaylistSettingsView()
-                    case .profiles:
-                        ProfileSettingsView()
-                    case .parentalControls:
-                        ParentalControlsView()
-                    case .preferences:
-                        PreferencesView()
+                    Section {
+                        Button(action: { showProfileSheet = true }) {
+                            Label("Profile", systemImage: "person.crop.circle")
+                        }
+                        .sheet(isPresented: $showProfileSheet) {
+                            ProfileSelectionSheet()
+                        }
                     }
                 }
-                .padding()
-            }
-        }
-    }
-}
-
-struct PlaylistSettingsView: View {
-    @EnvironmentObject var playlistManager: PlaylistManager
-    @State private var showingAddPlaylist = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text("Manage Playlists")
-                    .font(.title2)
-                
+                .listStyle(.plain)
+                .frame(maxWidth: 800)
                 Spacer()
-                
-                Button(action: { showingAddPlaylist = true }) {
-                    Label("Add Playlist", systemImage: "plus")
-                }
-            }
-            
-            if playlistManager.playlists.isEmpty {
-                ContentUnavailableView(
-                    "No Playlists",
-                    systemImage: "list.bullet",
-                    description: Text("Add a playlist to start watching content")
-                )
-            } else {
-                ForEach(playlistManager.playlists) { playlist in
-                    PlaylistRow(playlist: playlist)
-                }
             }
         }
-        .sheet(isPresented: $showingAddPlaylist) {
-            AddPlaylistView()
-        }
-    }
-}
-
-struct PlaylistRow: View {
-    let playlist: Playlist
-    @EnvironmentObject var playlistManager: PlaylistManager
-    @State private var isEditing = false
-    @State private var showingDeleteConfirmation = false
-    
-    private func formatDate(_ date: Date?) -> String {
-        guard let date = date else { return "Never" }
-        return date.formatted(date: .abbreviated, time: .shortened)
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(playlist.name)
-                        .font(.headline)
-                    Text(playlist.type.rawValue)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                if let lastUpdated = playlist.lastUpdated {
-                    Text("Updated: \(formatDate(lastUpdated))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Button(action: { isEditing = true }) {
-                    Image(systemName: "pencil")
-                }
-                
-                Button(action: { showingDeleteConfirmation = true }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
-            }
-            
-            if playlist.refreshInterval > 0 {
-                Text("Auto-refresh: Every \(Int(playlist.refreshInterval / 3600)) hours")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+        .onAppear {
+            // No need to set focus manually with List
         }
         .padding()
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(10)
-        .alert("Delete Playlist", isPresented: $showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                withAnimation {
-                    playlistManager.playlists.removeAll { $0.id == playlist.id }
-                }
-            }
-        } message: {
-            Text("Are you sure you want to delete '\(playlist.name)'? This action cannot be undone.")
-        }
-        .sheet(isPresented: $isEditing) {
-            EditPlaylistView(playlist: playlist)
-        }
     }
 }
 
-struct ProfileSettingsView: View {
-    @EnvironmentObject var profileManager: ProfileManager
-    @State private var showingCreateProfile = false
+struct M3UConfigView: View {
+    @Environment(\.dismiss) var dismiss
+    @State private var m3uUrl: String = ""
+    @State private var updateInterval: UpdateInterval = .everyDay
+    @State private var streams: [M3UStream] = []
+    @State private var editingStream: M3UStream? = nil
+    @State private var showScanPrompt = false
+    @State private var streamToScan: M3UStream? = nil
+    @State private var showUrlWarning = false
+    @State private var isCheckingUrl = false
+    @State private var showUrlError = false
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text("Manage Profiles")
-                    .font(.title2)
-                
-                Spacer()
-                
-                Button(action: { showingCreateProfile = true }) {
-                    Label("Add Profile", systemImage: "plus")
-                }
-            }
-            
-            ForEach(profileManager.profiles) { profile in
-                ProfileRow(profile: profile)
-            }
-        }
-        .sheet(isPresented: $showingCreateProfile) {
-            CreateProfileView()
+    enum UpdateInterval: String, CaseIterable, Identifiable {
+        case everyDay = "Every Day"
+        case every3Days = "Every 3 Days"
+        case everyWeek = "Every Week"
+        var id: String { rawValue }
+    }
+    
+    struct M3UStream: Identifiable, Equatable {
+        let id: UUID
+        var url: String
+        var interval: UpdateInterval
+    }
+    
+    func isValidUrl(_ url: String) -> Bool {
+        guard let url = URL(string: url), url.scheme == "http" || url.scheme == "https" else { return false }
+        return true
+    }
+    
+    func checkM3UUrl(_ url: String, completion: @escaping (Bool) -> Void) {
+        isCheckingUrl = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isCheckingUrl = false
+            // Simulate: fail if url contains "fail", succeed otherwise
+            completion(!url.lowercased().contains("fail"))
         }
     }
-}
-
-struct ProfileRow: View {
-    let profile: Profile
-    @EnvironmentObject var profileManager: ProfileManager
-    @State private var isEditing = false
-    @State private var showingDeleteConfirmation = false
     
     var body: some View {
-        HStack {
-            Circle()
-                .fill(Color.accentColor)
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Text(profile.name.prefix(2).uppercased())
-                        .foregroundColor(.white)
-                        .font(.headline)
-                )
-            
-            VStack(alignment: .leading) {
-                Text(profile.name)
-                    .font(.headline)
-                
-                if profile.isParentalControlEnabled {
-                    Text("Parental Controls: \(profile.allowedContentRating)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            Spacer()
-            
-            Button(action: { isEditing = true }) {
-                Image(systemName: "pencil")
-            }
-            
-            if profileManager.profiles.count > 1 {
-                Button(action: { showingDeleteConfirmation = true }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
-            }
-        }
-        .padding()
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(10)
-        .alert("Delete Profile", isPresented: $showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                withAnimation {
-                    profileManager.profiles.removeAll { $0.id == profile.id }
-                }
-            }
-        } message: {
-            Text("Are you sure you want to delete '\(profile.name)'? This action cannot be undone.")
-        }
-        .sheet(isPresented: $isEditing) {
-            EditProfileView(profile: profile)
-        }
-    }
-}
-
-struct ParentalControlsView: View {
-    @EnvironmentObject var profileManager: ProfileManager
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Parental Controls")
+        VStack(spacing: 30) {
+            Text("Add Remote List (M3U)")
                 .font(.title2)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
             
-            if let currentProfile = profileManager.currentProfile {
-                Toggle("Enable Parental Controls", isOn: .init(
-                    get: { currentProfile.isParentalControlEnabled },
-                    set: { newValue in
-                        if var profile = profileManager.currentProfile {
-                            profile.isParentalControlEnabled = newValue
-                            // Update profile in manager
+            if !streams.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Your M3U Streams")
+                        .font(.headline)
+                    ForEach(streams) { stream in
+                        HStack {
+                            Text(stream.url)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Spacer()
+                            Button("Edit") {
+                                m3uUrl = stream.url
+                                updateInterval = stream.interval
+                                editingStream = stream
+                            }
+                            .buttonStyle(.bordered)
+                            Button("Refresh") {
+                                print("Force reload for: \(stream.url)")
+                                // TODO: Call fetch/scan logic here
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
                     }
-                ))
-                
-                if currentProfile.isParentalControlEnabled {
-                    Picker("Content Rating", selection: .init(
-                        get: { currentProfile.allowedContentRating },
-                        set: { newValue in
-                            if var profile = profileManager.currentProfile {
-                                profile.allowedContentRating = newValue
-                                // Update profile in manager
-                            }
-                        }
-                    )) {
-                        Text("G").tag("G")
-                        Text("PG").tag("PG")
-                        Text("PG-13").tag("PG-13")
-                        Text("R").tag("R")
-                        Text("NC-17").tag("NC-17")
-                    }
-                    .pickerStyle(.segmented)
-                    
-                    SecureField("PIN", text: .init(
-                        get: { currentProfile.pin ?? "" },
-                        set: { newValue in
-                            if var profile = profileManager.currentProfile {
-                                profile.pin = newValue.isEmpty ? nil : newValue
-                                // Update profile in manager
-                            }
-                        }
-                    ))
-                    .textFieldStyle(.plain)
+                }
+                .padding(.bottom, 10)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                Text("M3U URL")
+                    .font(.headline)
+                TextField("Enter M3U URL", text: $m3uUrl)
                     .padding(8)
                     .background(Color.secondary.opacity(0.2))
                     .cornerRadius(10)
-                    .frame(maxWidth: 200)
+                    .frame(maxWidth: .infinity)
+                if !m3uUrl.isEmpty && !isValidUrl(m3uUrl) {
+                    Text("Please enter a valid http(s) URL.")
+                        .foregroundColor(.red)
+                        .font(.caption)
                 }
+                Text("Update Interval")
+                    .font(.headline)
+                Picker("Update Interval", selection: $updateInterval) {
+                    ForEach(UpdateInterval.allCases) { interval in
+                        Text(interval.rawValue).tag(interval)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+            .frame(maxWidth: .infinity)
+            
+            HStack(spacing: 20) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .buttonStyle(.bordered)
+                
+                Button(editingStream == nil ? "Save" : "Update") {
+                    let trimmedUrl = m3uUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmedUrl.isEmpty, isValidUrl(trimmedUrl) else {
+                        showUrlWarning = !isValidUrl(trimmedUrl)
+                        return
+                    }
+                    isCheckingUrl = true
+                    checkM3UUrl(trimmedUrl) { success in
+                        isCheckingUrl = false
+                        if success {
+                            if let editing = editingStream, let idx = streams.firstIndex(of: editing) {
+                                streams[idx].url = trimmedUrl
+                                streams[idx].interval = updateInterval
+                                editingStream = nil
+                            } else {
+                                let newStream = M3UStream(id: UUID(), url: trimmedUrl, interval: updateInterval)
+                                streams.append(newStream)
+                                streamToScan = newStream
+                                showScanPrompt = true
+                            }
+                            m3uUrl = ""
+                            updateInterval = .everyDay
+                        } else {
+                            showUrlError = true
+                        }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isCheckingUrl || m3uUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !isValidUrl(m3uUrl))
+                .overlay(
+                    Group {
+                        if isCheckingUrl {
+                            ProgressView().padding(.leading, 8)
+                        }
+                    }, alignment: .trailing
+                )
+            }
+            .alert("URL Check Failed", isPresented: $showUrlError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Could not access the M3U URL. Please check your link and try again.")
+            }
+            .alert("Start Scanning?", isPresented: $showScanPrompt, presenting: streamToScan) { stream in
+                Button("Yes, Scan Now") {
+                    print("Scanning/fetching for: \(stream.url)")
+                    // TODO: Call fetch/scan logic here
+                }
+                Button("No", role: .cancel) {}
+            } message: { stream in
+                Text("Do you want the system to start scanning and fetch the data for this stream?")
             }
         }
+        .padding(40)
+        .frame(width: 900, height: 350)
     }
 }
 
-struct PreferencesView: View {
-    @AppStorage("autoPlayNextEpisode") private var autoPlayNextEpisode = true
-    @AppStorage("showContentRatings") private var showContentRatings = true
-    @AppStorage("enablePictureInPicture") private var enablePictureInPicture = true
+struct XtreamConfigView: View {
+    @Environment(\.dismiss) var dismiss
+    @State private var name: String = ""
+    @State private var serverUrl: String = ""
+    @State private var username: String = ""
+    @State private var password: String = ""
+    @State private var updateInterval: UpdateInterval = .everyDay
+    @State private var streams: [XtreamStream] = []
+    @State private var editingStream: XtreamStream? = nil
+    @State private var showScanPrompt = false
+    @State private var streamToScan: XtreamStream? = nil
+    @State private var isCheckingConnection = false
+    @State private var showConnectionError = false
+    @State private var showUrlWarning = false
+    
+    enum UpdateInterval: String, CaseIterable, Identifiable {
+        case everyDay = "Every Day"
+        case every3Days = "Every 3 Days"
+        case everyWeek = "Every Week"
+        var id: String { rawValue }
+    }
+    
+    struct XtreamStream: Identifiable, Equatable {
+        let id: UUID
+        var name: String
+        var serverUrl: String
+        var username: String
+        var password: String
+        var interval: UpdateInterval
+    }
+    
+    func checkXtreamConnection(server: String, user: String, pass: String, completion: @escaping (Bool) -> Void) {
+        // Simulate async check (replace with real API call)
+        isCheckingConnection = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            isCheckingConnection = false
+            // Simulate: fail if server contains "fail", succeed otherwise
+            completion(!server.lowercased().contains("fail"))
+        }
+    }
+    
+    func isValidUrl(_ url: String) -> Bool {
+        guard let url = URL(string: url), url.scheme == "http" || url.scheme == "https" else { return false }
+        return true
+    }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("App Preferences")
+        VStack(spacing: 30) {
+            Text("Add Xtream Server")
                 .font(.title2)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
             
-            Toggle("Auto-play Next Episode", isOn: $autoPlayNextEpisode)
-            Toggle("Show Content Ratings", isOn: $showContentRatings)
-            Toggle("Enable Picture in Picture", isOn: $enablePictureInPicture)
-            
-            Divider()
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("About")
+            if !streams.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Your Xtream Servers")
+                        .font(.headline)
+                    ForEach(streams) { stream in
+                        HStack {
+                            Text(stream.name)
+                                .bold()
+                            Text(stream.serverUrl)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Button("Edit") {
+                                name = stream.name
+                                serverUrl = stream.serverUrl
+                                username = stream.username
+                                password = stream.password
+                                updateInterval = stream.interval
+                                editingStream = stream
+                            }
+                            .buttonStyle(.bordered)
+                            Button("Refresh") {
+                                print("Force reload for: \(stream.name) @ \(stream.serverUrl)")
+                                // TODO: Call fetch/scan logic here
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                }
+                .padding(.bottom, 10)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Name")
                     .font(.headline)
-                Text("iTVrock v1.0")
-                    .foregroundColor(.secondary)
-                Text("© 2024 iTVrock. All rights reserved.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                TextField("Enter name", text: $name)
+                    .padding(8)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(10)
+                    .frame(maxWidth: .infinity)
+                Text("Server URL")
+                    .font(.headline)
+                TextField("Enter server URL", text: $serverUrl)
+                    .padding(8)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(10)
+                    .frame(maxWidth: .infinity)
+                if !serverUrl.isEmpty && !isValidUrl(serverUrl) {
+                    Text("Please enter a valid http(s) URL.")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+                Text("Username")
+                    .font(.headline)
+                TextField("Enter username", text: $username)
+                    .padding(8)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(10)
+                    .frame(maxWidth: .infinity)
+                
+                Text("Password")
+                    .font(.headline)
+                SecureField("Enter password", text: $password)
+                    .padding(8)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(10)
+                    .frame(maxWidth: .infinity)
+                Text("Update Interval")
+                    .font(.headline)
+                Picker("Update Interval", selection: $updateInterval) {
+                    ForEach(UpdateInterval.allCases) { interval in
+                        Text(interval.rawValue).tag(interval)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+            .frame(maxWidth: .infinity)
+            
+            HStack(spacing: 20) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .buttonStyle(.bordered)
+                
+                Button(editingStream == nil ? "Save" : "Update") {
+                    let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let trimmedServer = serverUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let trimmedUser = username.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmedName.isEmpty, !trimmedServer.isEmpty, !trimmedUser.isEmpty, !password.isEmpty, isValidUrl(trimmedServer) else {
+                        showUrlWarning = !isValidUrl(trimmedServer)
+                        return
+                    }
+                    isCheckingConnection = true
+                    checkXtreamConnection(server: trimmedServer, user: trimmedUser, pass: password) { success in
+                        isCheckingConnection = false
+                        if success {
+                            if let editing = editingStream, let idx = streams.firstIndex(of: editing) {
+                                streams[idx].name = trimmedName
+                                streams[idx].serverUrl = trimmedServer
+                                streams[idx].username = trimmedUser
+                                streams[idx].password = password
+                                streams[idx].interval = updateInterval
+                                editingStream = nil
+                            } else {
+                                let newStream = XtreamStream(id: UUID(), name: trimmedName, serverUrl: trimmedServer, username: trimmedUser, password: password, interval: updateInterval)
+                                streams.append(newStream)
+                                streamToScan = newStream
+                                showScanPrompt = true
+                            }
+                            name = ""
+                            serverUrl = ""
+                            username = ""
+                            password = ""
+                            updateInterval = .everyDay
+                        } else {
+                            showConnectionError = true
+                        }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isCheckingConnection || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || serverUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty || !isValidUrl(serverUrl))
+                .overlay(
+                    Group {
+                        if isCheckingConnection {
+                            ProgressView().padding(.leading, 8)
+                        }
+                    }, alignment: .trailing
+                )
+            }
+            .alert("Connection Failed", isPresented: $showConnectionError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Could not connect to the server. Please check your details and try again.")
+            }
+            .alert("Start Scanning?", isPresented: $showScanPrompt, presenting: streamToScan) { stream in
+                Button("Yes, Scan Now") {
+                    print("Scanning/fetching for: \(stream.name) @ \(stream.serverUrl)")
+                    // TODO: Call fetch/scan logic here
+                }
+                Button("No", role: .cancel) {}
+            } message: { stream in
+                Text("Do you want the system to start scanning and fetch the data for this server?")
             }
         }
+        .padding(40)
+        .frame(width: 900, height: 400)
+    }
+}
+
+struct ProfileSelectionSheet: View {
+    @EnvironmentObject var profileManager: ProfileManager
+    @Environment(\.dismiss) var dismiss
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Select Profile")
+                .font(.title2)
+            ForEach(profileManager.profiles) { profile in
+                Button(action: {
+                    profileManager.currentProfile = profile
+                    dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "person.crop.circle")
+                        Text(profile.name)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(profileManager.currentProfile?.id == profile.id ? Color.accentColor.opacity(0.2) : Color.clear)
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+                .focusable(true)
+            }
+            Spacer()
+        }
+        .padding()
+        .frame(width: 400, height: 400)
     }
 }
 
@@ -349,7 +458,5 @@ struct PreferencesView: View {
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         SettingsView()
-            .environmentObject(PlaylistManager())
-            .environmentObject(ProfileManager())
     }
 } 

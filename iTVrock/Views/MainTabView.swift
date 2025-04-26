@@ -9,47 +9,49 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            ChannelsView()
-                .tabItem {
-                    Label("Channels", systemImage: "tv")
-                }
-                .tag(0)
-            
-            MoviesView()
-                .tabItem {
-                    Label("Movies", systemImage: "film")
-                }
-                .tag(1)
-            
-            TVShowsView()
-                .tabItem {
-                    Label("TV Shows", systemImage: "play.tv")
-                }
-                .tag(2)
-            
-            TVGuideView()
-                .tabItem {
-                    Label("TV Guide", systemImage: "calendar")
-                }
-                .tag(3)
-            
-            FavoritesView()
-                .tabItem {
-                    Label("Favorites", systemImage: "star")
-                }
-                .tag(4)
-            
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
-                .tag(5)
-        }
-        .onAppear {
-            // Configure appearance for tvOS
-            UITabBar.appearance().isTranslucent = true
-            playlistManager.vodManager = vodManager
+        ZStack(alignment: .topTrailing) {
+            TabView(selection: $selectedTab) {
+                ChannelsView()
+                    .tabItem {
+                        Label("Channels", systemImage: "tv")
+                    }
+                    .tag(0)
+                
+                MoviesView()
+                    .tabItem {
+                        Label("Movies", systemImage: "film")
+                    }
+                    .tag(1)
+                
+                TVShowsView()
+                    .tabItem {
+                        Label("TV Shows", systemImage: "play.tv")
+                    }
+                    .tag(2)
+                
+                TVGuideView()
+                    .tabItem {
+                        Label("TV Guide", systemImage: "calendar")
+                    }
+                    .tag(3)
+                
+                FavoritesView()
+                    .tabItem {
+                        Label("Favorites", systemImage: "star")
+                    }
+                    .tag(4)
+                
+                SettingsView()
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .tag(5)
+            }
+            .onAppear {
+                // Configure appearance for tvOS
+                UITabBar.appearance().isTranslucent = true
+                playlistManager.vodManager = vodManager
+            }
         }
     }
 }
