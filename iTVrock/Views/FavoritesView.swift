@@ -57,7 +57,7 @@ struct FavoritesView: View {
                     Text("TV Shows").tag(FavoriteType.show)
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 400)
+                .frame(maxWidth: 700)
                 
                 // Search Bar
                 HStack {

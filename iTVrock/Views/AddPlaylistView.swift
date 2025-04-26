@@ -14,6 +14,7 @@ struct AddPlaylistView: View {
     @State private var refreshInterval: TimeInterval = 24
     @State private var isLoading = false
     @State private var error: String?
+    @State private var m3uContent: String = ""
     
     private let refreshIntervals = [
         (label: "Never", value: 0),
@@ -43,6 +44,7 @@ struct AddPlaylistView: View {
                         .padding(8)
                         .background(Color.secondary.opacity(0.2))
                         .cornerRadius(10)
+                        .frame(maxWidth: .infinity)
                 }
                 
                 if playlistType == .m3u {
@@ -54,6 +56,7 @@ struct AddPlaylistView: View {
                             .padding(8)
                             .background(Color.secondary.opacity(0.2))
                             .cornerRadius(10)
+                            .frame(maxWidth: .infinity)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -64,6 +67,7 @@ struct AddPlaylistView: View {
                             .padding(8)
                             .background(Color.secondary.opacity(0.2))
                             .cornerRadius(10)
+                            .frame(maxWidth: .infinity)
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
@@ -74,6 +78,7 @@ struct AddPlaylistView: View {
                             .padding(8)
                             .background(Color.secondary.opacity(0.2))
                             .cornerRadius(10)
+                            .frame(maxWidth: .infinity)
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
@@ -84,6 +89,7 @@ struct AddPlaylistView: View {
                             .padding(8)
                             .background(Color.secondary.opacity(0.2))
                             .cornerRadius(10)
+                            .frame(maxWidth: .infinity)
                     }
                 }
                 
@@ -95,6 +101,7 @@ struct AddPlaylistView: View {
                         .padding(8)
                         .background(Color.secondary.opacity(0.2))
                         .cornerRadius(10)
+                        .frame(maxWidth: .infinity)
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -106,8 +113,21 @@ struct AddPlaylistView: View {
                         }
                     }
                 }
+                
+                if playlistType == .m3u {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Paste M3U Content (for testing)")
+                            .font(.headline)
+                        TextField("Paste M3U here", text: $m3uContent)
+                            .padding(8)
+                            .background(Color.secondary.opacity(0.2))
+                            .cornerRadius(10)
+                            .font(.system(.body, design: .monospaced))
+                            .frame(maxWidth: .infinity)
+                    }
+                }
             }
-            .frame(maxWidth: 400)
+            .frame(maxWidth: 700)
             
             if let error = error {
                 Text(error)
@@ -133,7 +153,7 @@ struct AddPlaylistView: View {
             }
         }
         .padding(50)
-        .frame(minWidth: 600, minHeight: 500)
+        .frame(minWidth: 800, minHeight: 500)
     }
     
     private var isValid: Bool {
@@ -157,12 +177,19 @@ struct AddPlaylistView: View {
             profileId: currentProfile.id
         )
         
-        // TODO: Implement actual playlist loading and validation
-        // For now, just add it to the manager
+        // Add to manager
         playlistManager.playlists.append(playlist)
         
-        // Simulate parsing and distributing content
-        playlistManager.parseAndDistributeContent(from: playlist)
+        if playlistType == .m3u && !m3uContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let (channels, movies) = M3UParser.parse(m3u: m3uContent, playlistId: playlist.id)
+            playlistManager.channels.append(contentsOf: channels)
+            playlistManager.vodManager?.updateContent(from: playlist, movies: movies, shows: [])
+        } else if playlistType == .xtream {
+            playlistManager.stubXtreamCodesContent(for: playlist)
+        } else {
+            // Simulate parsing and distributing content
+            playlistManager.parseAndDistributeContent(from: playlist)
+        }
         
         // Simulate loading
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {

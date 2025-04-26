@@ -132,6 +132,69 @@ class PlaylistManager: ObservableObject {
         // For now, just print for debugging
         print("Updating content from playlist: \(playlist.name)")
     }
+    
+    // Stub: Simulate Xtream Codes API response
+    func stubXtreamCodesContent(for playlist: Playlist) {
+        // Simulate multiple channels
+        let channels = (1...3).map { i in
+            Channel(
+                id: UUID().uuidString,
+                name: "Xtream Channel \(i)",
+                category: ["Sports", "News", "Kids"][i % 3],
+                streamUrl: "https://xtream.example.com/stream\(i).m3u8",
+                logoUrl: nil,
+                tvgId: nil,
+                playlistId: playlist.id
+            )
+        }
+        // Simulate multiple movies
+        let movies = (1...2).map { i in
+            Movie(
+                id: UUID().uuidString,
+                title: "Xtream Movie \(i)",
+                description: "A simulated Xtream Codes movie #\(i)",
+                posterUrl: nil,
+                category: ["Action", "Comedy"][i % 2],
+                playlistId: playlist.id,
+                streamUrl: "https://xtream.example.com/movie\(i).mp4",
+                duration: 6000 + Double(i * 300),
+                rating: ["PG-13", "R"][i % 2],
+                year: 2021 + i,
+                addedDate: Date(),
+                tmdbId: nil,
+                cast: nil,
+                director: nil,
+                imdbRating: nil
+            )
+        }
+        // Simulate a show
+        let shows = [TVShow(
+            id: UUID().uuidString,
+            title: "Xtream Show",
+            description: "A simulated Xtream Codes show",
+            posterUrl: nil,
+            category: "Drama",
+            playlistId: playlist.id,
+            rating: "TV-14",
+            year: 2022,
+            seasons: [TVShow.Season(number: 1, episodes: [
+                Episode(
+                    id: UUID().uuidString,
+                    title: "Pilot",
+                    description: "The first episode",
+                    seasonNumber: 1,
+                    episodeNumber: 1,
+                    streamUrl: "https://xtream.example.com/show1e1.mp4",
+                    thumbnailUrl: nil,
+                    duration: 1800,
+                    airDate: Date()
+                )
+            ])],
+            tmdbId: nil
+        )]
+        self.channels.append(contentsOf: channels)
+        vodManager?.updateContent(from: playlist, movies: movies, shows: shows)
+    }
 }
 
 class FavoriteManager: ObservableObject {

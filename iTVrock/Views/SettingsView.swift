@@ -31,7 +31,7 @@ struct SettingsView: View {
                             Image(systemName: section.icon)
                                 .frame(width: 30)
                             Text(section.rawValue)
-                                .font(.title3)
+                                .font(.caption)
                             Spacer()
                         }
                         .padding(.horizontal)
