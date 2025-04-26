@@ -7,6 +7,7 @@ struct MoviesView: View {
     @State private var selectedCategory: String?
     @State private var selectedMovie: Movie? = nil
     @State private var isSidebarVisible: Bool = false
+    @FocusState private var focusedMovieId: String?
     
     private var categories: [String] {
         let movies = vodManager.movies
@@ -43,7 +44,8 @@ struct MoviesView: View {
             MovieGridContent(
                 filteredMovies: getFilteredMovies(),
                 isSidebarVisible: $isSidebarVisible,
-                selectedMovie: $selectedMovie
+                selectedMovie: $selectedMovie,
+                focusedMovieId: $focusedMovieId
             )
             
             // Sidebar
@@ -68,6 +70,14 @@ struct MoviesView: View {
                 selectedMovie = nil
             }
         }
+        .onMoveCommand { direction in
+            if direction == .down {
+                let filteredMovies = getFilteredMovies()
+                if let firstMovie = filteredMovies.first {
+                    focusedMovieId = firstMovie.id
+                }
+            }
+        }
     }
 }
 
@@ -76,6 +86,7 @@ struct MovieGridContent: View {
     let filteredMovies: [Movie]
     @Binding var isSidebarVisible: Bool
     @Binding var selectedMovie: Movie?
+    @Binding var focusedMovieId: String?
     
     var body: some View {
         VStack {
@@ -89,10 +100,11 @@ struct MovieGridContent: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 200))], spacing: 20) {
                         ForEach(filteredMovies) { movie in
-                            MovieCell(movie: movie) {
+                            MovieCell(movie: movie, isFocused: focusedMovieId == movie.id) {
                                 print("Selected movie: \(movie.title)")
                                 selectedMovie = movie
                             }
+                            .focused($focusedMovieId, equals: movie.id)
                         }
                     }
                     .padding()
@@ -154,8 +166,9 @@ struct MovieSidebar: View {
 
 struct MovieCell: View {
     let movie: Movie
+    let isFocused: Bool
     let onSelect: () -> Void
-    @Environment(\.isFocused) private var isFocused
+    @Environment(\.isFocused) private var isEnvironmentFocused
     
     var body: some View {
         Button(action: onSelect) {
@@ -193,10 +206,10 @@ struct MovieCell: View {
                     .multilineTextAlignment(.center)
             }
             .padding(8)
-            .background(isFocused ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.1))
+            .background((isEnvironmentFocused || isFocused) ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.1))
             .cornerRadius(10)
-            .scaleEffect(isFocused ? 1.05 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: isFocused)
+            .scaleEffect((isEnvironmentFocused || isFocused) ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isEnvironmentFocused || isFocused)
         }
         .buttonStyle(.plain)
         .focusable()
