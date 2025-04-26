@@ -39,11 +39,6 @@ struct MoviesView: View {
     
     var body: some View {
         ZStack(alignment: .leading) {
-            // Sidebar reveal button (only when sidebar is hidden)
-            if !isSidebarVisible {
-                SidebarRevealButton(isSidebarVisible: $isSidebarVisible)
-            }
-            
             // Main Content
             MovieGridContent(
                 filteredMovies: getFilteredMovies(),
@@ -73,26 +68,6 @@ struct MoviesView: View {
                 selectedMovie = nil
             }
         }
-    }
-}
-
-// MARK: - Sidebar Button Component
-struct SidebarRevealButton: View {
-    @Binding var isSidebarVisible: Bool
-    
-    var body: some View {
-        VStack {
-            Button(action: { withAnimation { isSidebarVisible = true } }) {
-                Image(systemName: "sidebar.left")
-                    .padding()
-                    .background(Color(.darkGray))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            Spacer()
-        }
-        .frame(width: 60)
-        .zIndex(2)
     }
 }
 
