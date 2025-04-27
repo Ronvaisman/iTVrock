@@ -216,8 +216,56 @@ class PlaylistManager: ObservableObject {
         // No fake movies generation - removed per request
         var movies: [Movie] = []
         
-        // No fake TV shows generation - removed per request
+        // Generate TV shows for demo and testing 
+        let showCategories = ["Drama Series", "Comedy Series", "Reality TV", "Documentary Series"]
         var shows: [TVShow] = []
+        
+        for category in showCategories {
+            // Create 2-4 shows per category
+            let showCount = 2 + Int.random(in: 0...2)
+            
+            for i in 1...showCount {
+                let seasonCount = 1 + Int.random(in: 0...3)
+                var seasons: [TVShow.Season] = []
+                
+                for s in 1...seasonCount {
+                    let episodeCount = 5 + Int.random(in: 0...10)
+                    let episodes = (1...episodeCount).map { e in
+                        Episode(
+                            id: UUID().uuidString,
+                            title: "S\(s)E\(e) - Episode Title",
+                            description: "Season \(s) Episode \(e) of this amazing show.",
+                            seasonNumber: s,
+                            episodeNumber: e,
+                            streamUrl: "\(baseUrl)/series\(authPart)/\(i)_\(s)_\(e).mp4",
+                            thumbnailUrl: "https://via.placeholder.com/300x170?text=S\(s)E\(e)",
+                            duration: 1800 + Double(e * 60),
+                            airDate: Calendar.current.date(byAdding: .day, value: -((s-1) * 100 + e), to: Date())
+                        )
+                    }
+                    
+                    seasons.append(TVShow.Season(number: s, episodes: episodes))
+                }
+                
+                shows.append(TVShow(
+                    id: UUID().uuidString,
+                    title: "\(category) \(i)",
+                    description: "A compelling \(category.lowercased()) that audiences love.",
+                    posterUrl: "https://via.placeholder.com/300x450?text=\(category)\(i)",
+                    category: category,
+                    playlistId: playlist.id,
+                    rating: ["TV-G", "TV-14", "TV-MA"][Int.random(in: 0...2)],
+                    year: 2015 + Int.random(in: 0...8),
+                    seasons: seasons,
+                    tmdbId: nil
+                ))
+                
+                // Debug print first show of each category
+                if i == 1 {
+                    print("Debug - Created TV show: \(category) \(i) with \(seasonCount) seasons")
+                }
+            }
+        }
         
         // Add generated content to the managers
         self.channels.append(contentsOf: channels)

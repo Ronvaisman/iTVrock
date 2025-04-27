@@ -17,6 +17,7 @@ struct ChannelsView: View {
     @State private var selectedChannel: Channel? = nil
     @State private var focusedChannelIndex: Int? = nil
     @State private var isSidebarFocused: Bool = true
+    @State private var isSidebarVisible: Bool = false
     
     private var categories: [String] {
         var cats = Set(playlistManager.channels.map { channel in
@@ -48,14 +49,7 @@ struct ChannelsView: View {
     }
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Categories Sidebar
-            ChannelSidebar(
-                categories: categories,
-                selectedCategory: $selectedCategory,
-                isSidebarFocused: $isSidebarFocused
-            )
-            
+        ZStack(alignment: .leading) {
             // Channel Grid
             ChannelGridContent(
                 filteredChannels: getFilteredChannels(),
@@ -63,9 +57,22 @@ struct ChannelsView: View {
                 selectedChannel: $selectedChannel,
                 focusedChannelIndex: $focusedChannelIndex,
                 isSidebarFocused: $isSidebarFocused,
+                isSidebarVisible: $isSidebarVisible,
                 isEmpty: playlistManager.channels.isEmpty
             )
+            
+            // Categories Sidebar
+            if isSidebarVisible {
+                ChannelSidebar(
+                    categories: categories,
+                    selectedCategory: $selectedCategory,
+                    isSidebarFocused: $isSidebarFocused,
+                    isSidebarVisible: $isSidebarVisible
+                )
+                .transition(.move(edge: .leading))
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: isSidebarVisible)
         .sheet(isPresented: $showingAddPlaylist) {
             AddPlaylistView()
         }
@@ -77,8 +84,11 @@ struct ChannelsView: View {
         .onMoveCommand { direction in
             switch direction {
             case .left:
-                // Move focus to sidebar when pressing left
-                isSidebarFocused = true
+                // Show sidebar when pressing left from grid
+                if !isSidebarVisible && !isSidebarFocused {
+                    withAnimation { isSidebarVisible = true }
+                    isSidebarFocused = true
+                }
             case .right:
                 // Move focus to channel grid when pressing right
                 if isSidebarFocused {
@@ -108,10 +118,20 @@ struct ChannelSidebar: View {
     let categories: [String]
     @Binding var selectedCategory: String?
     @Binding var isSidebarFocused: Bool
+    @Binding var isSidebarVisible: Bool
     @FocusState private var focusedCategoryIndex: Int?
     
     var body: some View {
         VStack(spacing: 2) {
+            // Hide sidebar button
+            Button(action: { withAnimation { isSidebarVisible = false } }) {
+                Image(systemName: "chevron.left")
+                    .padding()
+            }
+            .buttonStyle(.plain)
+            .focusable(true)
+            
+            // Categories list
             ForEach(Array(categories.enumerated()), id: \.element) { index, category in
                 categoryButton(for: category, at: index)
             }
@@ -122,6 +142,15 @@ struct ChannelSidebar: View {
         .onChange(of: isSidebarFocused) { newValue in
             if newValue && focusedCategoryIndex == nil && !categories.isEmpty {
                 focusedCategoryIndex = 0
+            }
+        }
+        .onMoveCommand { direction in
+            if direction == .right {
+                withAnimation {
+                    // If pressing right from sidebar, hide it and move focus to grid
+                    isSidebarVisible = false
+                    isSidebarFocused = false
+                }
             }
         }
     }
@@ -154,6 +183,7 @@ struct ChannelGridContent: View {
     @Binding var selectedChannel: Channel?
     @Binding var focusedChannelIndex: Int?
     @Binding var isSidebarFocused: Bool
+    @Binding var isSidebarVisible: Bool
     let isEmpty: Bool
     
     // Convert the channels into a simpler array for the ForEach
@@ -172,6 +202,7 @@ struct ChannelGridContent: View {
                 channelGridView
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Sync focusedChannelId with parent's focusedChannelIndex
         .onChange(of: focusedChannelId) { newValue in
             if let newId = newValue, 
@@ -190,9 +221,12 @@ struct ChannelGridContent: View {
         .onMoveCommand { direction in
             switch direction {
             case .left:
-                // If user presses left on the first item of a row, move to sidebar
-                if focusedChannelIndex == 0 || focusedChannelIndex?.isMultiple(of: 3) == true {
-                    isSidebarFocused = true
+                // Show sidebar when pressing left from first column
+                if !isSidebarVisible || (focusedChannelIndex == 0 || focusedChannelIndex?.isMultiple(of: 3) == true) {
+                    withAnimation {
+                        isSidebarVisible = true
+                        isSidebarFocused = true
+                    }
                     focusedChannelId = nil
                 }
             default:
