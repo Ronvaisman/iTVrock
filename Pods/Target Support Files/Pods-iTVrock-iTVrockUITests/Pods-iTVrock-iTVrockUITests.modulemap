@@ -1,0 +1,6 @@
+framework module Pods_iTVrock_iTVrockUITests {
+  umbrella header "Pods-iTVrock-iTVrockUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}

@@ -29,11 +29,11 @@ struct MainTabView: View {
                     }
                     .tag(2)
                 
-                TVGuideView()
-                    .tabItem {
-                        Label("TV Guide", systemImage: "calendar")
-                    }
-                    .tag(3)
+                // TVGuideView()
+                //     .tabItem {
+                //         Label("TV Guide", systemImage: "calendar")
+                //     }
+                //     .tag(3)
                 
                 FavoritesView()
                     .tabItem {
@@ -50,7 +50,18 @@ struct MainTabView: View {
             .onAppear {
                 // Configure appearance for tvOS
                 UITabBar.appearance().isTranslucent = true
+                
+                // Connect managers
                 playlistManager.vodManager = vodManager
+                
+                // Refresh all playlists to ensure content is loaded
+                for playlist in playlistManager.playlists {
+                    if playlist.type == .xtream {
+                        playlistManager.loadXtreamContent(from: playlist)
+                    } else {
+                        playlistManager.parseAndDistributeContent(from: playlist)
+                    }
+                }
             }
         }
     }

@@ -6,6 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		085A6C5942E4CD4F6A3123C8 /* Pods_iTVrockTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C84F8A274A77C8B538173B3E /* Pods_iTVrockTests.framework */; };
+		3B509A3F2DBD8CBF005871F8 /* TVVLCKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B509A3E2DBD8CBF005871F8 /* TVVLCKit.framework */; };
+		3B509A412DBD8CBF005871F8 /* TVVLCKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B509A3E2DBD8CBF005871F8 /* TVVLCKit.framework */; };
+		3B509A422DBD8D3F005871F8 /* Pods_iTVrock.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C69488C8FD5235CCEBA12F2D /* Pods_iTVrock.framework */; };
+		3B509A432DBD8D3F005871F8 /* Pods_iTVrock.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C69488C8FD5235CCEBA12F2D /* Pods_iTVrock.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		3B509A442DBD8DB1005871F8 /* TVVLCKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B509A3E2DBD8CBF005871F8 /* TVVLCKit.framework */; };
+		3B509A452DBD8DB1005871F8 /* TVVLCKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3B509A3E2DBD8CBF005871F8 /* TVVLCKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A44E1FCAB62E20231D60F93E /* Pods_iTVrock_iTVrockUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 09D6C01D51E249FDAD0737C0 /* Pods_iTVrock_iTVrockUITests.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		3B2182BE2DBBF03A0082BFF9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -23,10 +34,35 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		3B509A352DBD87E7005871F8 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				3B509A432DBD8D3F005871F8 /* Pods_iTVrock.framework in Embed Frameworks */,
+				3B509A452DBD8DB1005871F8 /* TVVLCKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		04B100B35DB51975B98FEF28 /* Pods-iTVrock-iTVrockUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iTVrock-iTVrockUITests.debug.xcconfig"; path = "Target Support Files/Pods-iTVrock-iTVrockUITests/Pods-iTVrock-iTVrockUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		05BE4DBD05756B5CE312C130 /* Pods-iTVrock.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iTVrock.release.xcconfig"; path = "Target Support Files/Pods-iTVrock/Pods-iTVrock.release.xcconfig"; sourceTree = "<group>"; };
+		09D6C01D51E249FDAD0737C0 /* Pods_iTVrock_iTVrockUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iTVrock_iTVrockUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		38142B7B7BD333FE5A5512DB /* Pods-iTVrockTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iTVrockTests.release.xcconfig"; path = "Target Support Files/Pods-iTVrockTests/Pods-iTVrockTests.release.xcconfig"; sourceTree = "<group>"; };
 		3B2182A62DBBF0390082BFF9 /* iTVrock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iTVrock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B2182BD2DBBF03A0082BFF9 /* iTVrockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTVrockTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B2182C72DBBF03A0082BFF9 /* iTVrockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTVrockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B509A3E2DBD8CBF005871F8 /* TVVLCKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = TVVLCKit.framework; sourceTree = "<group>"; };
+		4295DFFA16CB279E1A49428C /* Pods-iTVrock-iTVrockUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iTVrock-iTVrockUITests.release.xcconfig"; path = "Target Support Files/Pods-iTVrock-iTVrockUITests/Pods-iTVrock-iTVrockUITests.release.xcconfig"; sourceTree = "<group>"; };
+		C27276EE7A3BD1F4881D23BF /* Pods-iTVrock.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iTVrock.debug.xcconfig"; path = "Target Support Files/Pods-iTVrock/Pods-iTVrock.debug.xcconfig"; sourceTree = "<group>"; };
+		C69488C8FD5235CCEBA12F2D /* Pods_iTVrock.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iTVrock.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C84F8A274A77C8B538173B3E /* Pods_iTVrockTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_iTVrockTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D9A186EB250D48EA0D345E0A /* Pods-iTVrockTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-iTVrockTests.debug.xcconfig"; path = "Target Support Files/Pods-iTVrockTests/Pods-iTVrockTests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +101,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3B509A422DBD8D3F005871F8 /* Pods_iTVrock.framework in Frameworks */,
+				3B509A442DBD8DB1005871F8 /* TVVLCKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,6 +110,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				085A6C5942E4CD4F6A3123C8 /* Pods_iTVrockTests.framework in Frameworks */,
+				3B509A412DBD8CBF005871F8 /* TVVLCKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +119,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A44E1FCAB62E20231D60F93E /* Pods_iTVrock_iTVrockUITests.framework in Frameworks */,
+				3B509A3F2DBD8CBF005871F8 /* TVVLCKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +134,8 @@
 				3B2182C02DBBF03A0082BFF9 /* iTVrockTests */,
 				3B2182CA2DBBF03A0082BFF9 /* iTVrockUITests */,
 				3B2182A72DBBF0390082BFF9 /* Products */,
+				A452D63C8054E72DEC532C08 /* Pods */,
+				FBE595CD157DEF6E6BCCB331 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -105,6 +149,30 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		A452D63C8054E72DEC532C08 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				C27276EE7A3BD1F4881D23BF /* Pods-iTVrock.debug.xcconfig */,
+				05BE4DBD05756B5CE312C130 /* Pods-iTVrock.release.xcconfig */,
+				04B100B35DB51975B98FEF28 /* Pods-iTVrock-iTVrockUITests.debug.xcconfig */,
+				4295DFFA16CB279E1A49428C /* Pods-iTVrock-iTVrockUITests.release.xcconfig */,
+				D9A186EB250D48EA0D345E0A /* Pods-iTVrockTests.debug.xcconfig */,
+				38142B7B7BD333FE5A5512DB /* Pods-iTVrockTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		FBE595CD157DEF6E6BCCB331 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C69488C8FD5235CCEBA12F2D /* Pods_iTVrock.framework */,
+				09D6C01D51E249FDAD0737C0 /* Pods_iTVrock_iTVrockUITests.framework */,
+				C84F8A274A77C8B538173B3E /* Pods_iTVrockTests.framework */,
+				3B509A3E2DBD8CBF005871F8 /* TVVLCKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -112,9 +180,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3B2182D02DBBF03A0082BFF9 /* Build configuration list for PBXNativeTarget "iTVrock" */;
 			buildPhases = (
+				C86CBCACEA24684FC9D2F6E2 /* [CP] Check Pods Manifest.lock */,
 				3B2182A22DBBF0390082BFF9 /* Sources */,
 				3B2182A32DBBF0390082BFF9 /* Frameworks */,
 				3B2182A42DBBF0390082BFF9 /* Resources */,
+				3B509A352DBD87E7005871F8 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -124,8 +194,6 @@
 				3B2182A82DBBF0390082BFF9 /* iTVrock */,
 			);
 			name = iTVrock;
-			packageProductDependencies = (
-			);
 			productName = iTVrock;
 			productReference = 3B2182A62DBBF0390082BFF9 /* iTVrock.app */;
 			productType = "com.apple.product-type.application";
@@ -134,6 +202,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3B2182D52DBBF03A0082BFF9 /* Build configuration list for PBXNativeTarget "iTVrockTests" */;
 			buildPhases = (
+				6A683ACC3A29ABE78725A29A /* [CP] Check Pods Manifest.lock */,
 				3B2182B92DBBF03A0082BFF9 /* Sources */,
 				3B2182BA2DBBF03A0082BFF9 /* Frameworks */,
 				3B2182BB2DBBF03A0082BFF9 /* Resources */,
@@ -147,8 +216,6 @@
 				3B2182C02DBBF03A0082BFF9 /* iTVrockTests */,
 			);
 			name = iTVrockTests;
-			packageProductDependencies = (
-			);
 			productName = iTVrockTests;
 			productReference = 3B2182BD2DBBF03A0082BFF9 /* iTVrockTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -157,6 +224,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3B2182D82DBBF03A0082BFF9 /* Build configuration list for PBXNativeTarget "iTVrockUITests" */;
 			buildPhases = (
+				397256E6D2B71C1F964E91D6 /* [CP] Check Pods Manifest.lock */,
 				3B2182C32DBBF03A0082BFF9 /* Sources */,
 				3B2182C42DBBF03A0082BFF9 /* Frameworks */,
 				3B2182C52DBBF03A0082BFF9 /* Resources */,
@@ -170,8 +238,6 @@
 				3B2182CA2DBBF03A0082BFF9 /* iTVrockUITests */,
 			);
 			name = iTVrockUITests;
-			packageProductDependencies = (
-			);
 			productName = iTVrockUITests;
 			productReference = 3B2182C72DBBF03A0082BFF9 /* iTVrockUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -244,6 +310,75 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		397256E6D2B71C1F964E91D6 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-iTVrock-iTVrockUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		6A683ACC3A29ABE78725A29A /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-iTVrockTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		C86CBCACEA24684FC9D2F6E2 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-iTVrock-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		3B2182A22DBBF0390082BFF9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -284,6 +419,7 @@
 /* Begin XCBuildConfiguration section */
 		3B2182D12DBBF03A0082BFF9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C27276EE7A3BD1F4881D23BF /* Pods-iTVrock.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -293,6 +429,10 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iTVrock/Preview Content\"";
 				DEVELOPMENT_TEAM = FKZ98YMFV8;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iTVrock/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -312,6 +452,7 @@
 		};
 		3B2182D22DBBF03A0082BFF9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 05BE4DBD05756B5CE312C130 /* Pods-iTVrock.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -321,6 +462,10 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iTVrock/Preview Content\"";
 				DEVELOPMENT_TEAM = FKZ98YMFV8;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iTVrock/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -459,11 +604,16 @@
 		};
 		3B2182D62DBBF03A0082BFF9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D9A186EB250D48EA0D345E0A /* Pods-iTVrockTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FKZ98YMFV8;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.buildingSocial.iTVrockTests;
@@ -478,11 +628,16 @@
 		};
 		3B2182D72DBBF03A0082BFF9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 38142B7B7BD333FE5A5512DB /* Pods-iTVrockTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FKZ98YMFV8;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.buildingSocial.iTVrockTests;
@@ -497,10 +652,15 @@
 		};
 		3B2182D92DBBF03A0082BFF9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 04B100B35DB51975B98FEF28 /* Pods-iTVrock-iTVrockUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FKZ98YMFV8;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.buildingSocial.iTVrockUITests;
@@ -514,10 +674,15 @@
 		};
 		3B2182DA2DBBF03A0082BFF9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4295DFFA16CB279E1A49428C /* Pods-iTVrock-iTVrockUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FKZ98YMFV8;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.buildingSocial.iTVrockUITests;

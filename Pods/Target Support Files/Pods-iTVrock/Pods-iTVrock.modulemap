@@ -1,0 +1,6 @@
+framework module Pods_iTVrock {
+  umbrella header "Pods-iTVrock-umbrella.h"
+
+  export *
+  module * { export * }
+}

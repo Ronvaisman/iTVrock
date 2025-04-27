@@ -85,90 +85,9 @@ class PlaylistManager: ObservableObject {
         self.playlists.append(defaultPlaylist)
         
         // Debug print
-        print("Debug - Adding default empty playlist and generating sample content with valid URLs")
+        print("Debug - Added empty playlist - user needs to configure it with credentials")
         
-        // Generate sample content with valid URLs even though playlist is empty
-        generateSampleContent(for: defaultPlaylist)
-    }
-    
-    // New method for generating sample content with valid URLs
-    func generateSampleContent(for playlist: Playlist) {
-        // Generate some sample channels
-        let channelCategories = ["Sports", "News", "Entertainment", "Movies", "Kids"]
-        
-        var sampleChannels: [Channel] = []
-        
-        // Create sample channels with working URLs
-        for (categoryIndex, category) in channelCategories.enumerated() {
-            for i in 1...3 {
-                let id = "\(categoryIndex)_\(i)"
-                // Use a sample streaming URL that works for testing
-                let sampleUrl = "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8"
-                
-                let channel = Channel(
-                    id: id,
-                    name: "\(category) Channel \(i)",
-                    category: category,
-                    streamUrl: sampleUrl,
-                    logoUrl: "https://via.placeholder.com/150?text=\(category)\(i)",
-                    tvgId: nil,
-                    playlistId: playlist.id,
-                    order: i,
-                    catchupAvailable: false
-                )
-                sampleChannels.append(channel)
-                
-                // Print the first channel URL for debugging
-                if categoryIndex == 0 && i == 1 {
-                    print("Debug - Created sample channel with URL: \(sampleUrl)")
-                }
-            }
-        }
-        
-        // Generate sample movies
-        var sampleMovies: [Movie] = []
-        let movieCategories = ["Action", "Comedy", "Drama", "Horror"]
-        let movieTitles = [
-            "The Last Journey", "Midnight Express", "Stellar Conflict", "Ocean's Depth",
-            "The Hidden Truth", "Shadows of the Past", "Eternal Sunshine", "The Dark Knight"
-        ]
-        
-        // Use Big Buck Bunny as a sample movie that should reliably work
-        let sampleMovieUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-        
-        for (i, title) in movieTitles.enumerated() {
-            let category = movieCategories[i % movieCategories.count]
-            let movie = Movie(
-                id: "movie_\(i)",
-                title: title,
-                description: "A compelling movie with great performances.",
-                posterUrl: "https://via.placeholder.com/300x450?text=\(title.replacingOccurrences(of: " ", with: "+"))",
-                category: category,
-                playlistId: playlist.id,
-                streamUrl: sampleMovieUrl,
-                duration: Double(5400 + i * 300),
-                rating: "PG-13",
-                year: 2020 + i,
-                addedDate: Date(),
-                tmdbId: nil,
-                cast: ["Actor 1", "Actor 2"],
-                director: "Director",
-                imdbRating: 7.5
-            )
-            sampleMovies.append(movie)
-            
-            // Print the first movie URL for debugging
-            if i == 0 {
-                print("Debug - Created sample movie with URL: \(sampleMovieUrl)")
-            }
-        }
-        
-        // Add content to managers
-        self.channels.append(contentsOf: sampleChannels)
-        vodManager?.movies.removeAll { $0.playlistId == playlist.id }
-        vodManager?.movies.append(contentsOf: sampleMovies)
-        
-        print("Debug - Added \(sampleChannels.count) sample channels and \(sampleMovies.count) sample movies with working URLs")
+        // No content loading - will happen after user configures playlist
     }
     
     // Load content from an Xtream Codes playlist
@@ -183,74 +102,20 @@ class PlaylistManager: ObservableObject {
     
     // Simulated parser: splits playlist into channels, movies, and shows
     func parseAndDistributeContent(from playlist: Playlist) {
-        // Simulate multiple channels
-        let sampleChannels = (1...5).map { i in
-            Channel(
-                id: UUID().uuidString,
-                name: "Channel \(i)",
-                category: ["News", "Sports", "Kids", "Movies", "Music"][i % 5],
-                streamUrl: "https://example.com/stream\(i).m3u8",
-                logoUrl: nil,
-                tvgId: nil,
-                playlistId: playlist.id
-            )
+        // This method should be updated to parse real content from playlist
+        // No sample data generation
+        print("Parsing content from playlist: \(playlist.name)")
+        
+        // In a real implementation, this would extract channels, movies, and shows
+        // from the playlist and update the corresponding managers
+        
+        // Use stubXtreamCodesContent for actual content loading based on the playlist credentials
+        if playlist.type == .xtream {
+            stubXtreamCodesContent(for: playlist)
         }
-        // Simulate multiple movies
-        let sampleMovies = (1...6).map { i in
-            Movie(
-                id: UUID().uuidString,
-                title: "Movie \(i)",
-                description: "A simulated movie #\(i) from playlist",
-                posterUrl: nil,
-                category: ["Drama", "Action", "Comedy", "Horror", "Sci-Fi", "Documentary"][i % 6],
-                playlistId: playlist.id,
-                streamUrl: "https://example.com/movie\(i).mp4",
-                duration: 5400 + Double(i * 300),
-                rating: ["PG", "PG-13", "R", nil][i % 4],
-                year: 2020 + i,
-                addedDate: Date(),
-                tmdbId: nil,
-                cast: nil,
-                director: nil,
-                imdbRating: nil
-            )
-        }
-        // Simulate multiple shows with seasons and episodes
-        let sampleShows = (1...3).map { i in
-            TVShow(
-                id: UUID().uuidString,
-                title: "Show \(i)",
-                description: "A simulated show #\(i) from playlist",
-                posterUrl: nil,
-                category: ["Comedy", "Drama", "Kids"][i % 3],
-                playlistId: playlist.id,
-                rating: ["TV-G", "TV-14", nil][i % 3],
-                year: 2018 + i,
-                seasons: (1...2).map { seasonNum in
-                    TVShow.Season(
-                        number: seasonNum,
-                        episodes: (1...4).map { epNum in
-                            Episode(
-                                id: UUID().uuidString,
-                                title: "S\(seasonNum)E\(epNum) - Episode Title",
-                                description: "Description for episode \(epNum) of season \(seasonNum)",
-                                seasonNumber: seasonNum,
-                                episodeNumber: epNum,
-                                streamUrl: "https://example.com/show\(i)s\(seasonNum)e\(epNum).mp4",
-                                thumbnailUrl: nil,
-                                duration: 1800 + Double(epNum * 60),
-                                airDate: Calendar.current.date(byAdding: .day, value: -epNum, to: Date())
-                            )
-                        }
-                    )
-                },
-                tmdbId: nil
-            )
-        }
-        // Update channels
-        self.channels.append(contentsOf: sampleChannels)
-        // Update VODManager
-        vodManager?.updateContent(from: playlist, movies: sampleMovies, shows: sampleShows)
+        
+        // Notify listeners that content has been updated
+        onContentUpdated?()
     }
     
     // Notify when content is updated
@@ -266,18 +131,54 @@ class PlaylistManager: ObservableObject {
     func stubXtreamCodesContent(for playlist: Playlist) {
         // For real implementation, this would fetch actual content from the Xtream API
         
-        // Ensure we have non-nil URL, username, and password
-        guard let username = playlist.username, let password = playlist.password else {
-            print("Error: Missing username or password for Xtream Codes playlist")
-            return
+        // Ensure we have a valid URL
+        // We'll allow empty username/password for demo purposes, but handle it properly
+        let username = playlist.username ?? ""
+        let password = playlist.password ?? ""
+        
+        // Normalize the base URL to ensure it has a protocol and no trailing slash
+        var baseUrl = playlist.url.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // If URL is empty or just a path component, use a default server address for testing
+        if baseUrl.isEmpty || !baseUrl.contains(".") {
+            print("Warning: Invalid server URL detected. Using example.com for testing.")
+            baseUrl = "http://example.com"
         }
         
-        let baseUrl = playlist.url
-        // Add port 80 to the base URL for proper connection
-        let streamBaseUrl = baseUrl + ":80"
+        // Add protocol if missing
+        if !baseUrl.contains("://") {
+            baseUrl = "http://" + baseUrl
+        }
+        
+        // Remove trailing slash if present
+        if baseUrl.hasSuffix("/") {
+            baseUrl = String(baseUrl.dropLast())
+        }
         
         // Debug print
-        print("Debug - Stream base URL: \(streamBaseUrl)")
+        print("Debug - Normalized base URL: \(baseUrl)")
+        
+        // Create path components - handle empty credentials to avoid triple slashes
+        let authPart: String
+        if username.isEmpty && password.isEmpty {
+            authPart = ""
+        } else {
+            authPart = "/\(username)/\(password)"
+        }
+        
+        // Check if we have actual credentials to load content
+        if username.isEmpty || password.isEmpty {
+            print("Notice: No valid credentials provided. All content lists will remain empty until proper credentials are provided.")
+            // Empty content lists
+            var channels: [Channel] = []
+            var movies: [Movie] = []
+            var shows: [TVShow] = []
+            
+            // Add empty lists to the managers
+            self.channels.append(contentsOf: channels)
+            vodManager?.updateContent(from: playlist, movies: movies, shows: shows)
+            return
+        }
         
         // Generate more channels for better testing
         let channelCategories = ["Sports", "News", "Entertainment", "Movies", "Kids", "Music", "Documentary", "Premium"]
@@ -291,7 +192,7 @@ class PlaylistManager: ObservableObject {
             
             for i in 1...channelCount {
                 let channelNumber = categoryIndex * 100 + i
-                let streamUrl = "\(streamBaseUrl)/live/\(username)/\(password)/\(channelNumber).ts"
+                let streamUrl = "\(baseUrl)/live\(authPart)/\(channelNumber).ts"
                 
                 // Debug print first channel of each category
                 if i == 1 {
@@ -312,100 +213,11 @@ class PlaylistManager: ObservableObject {
             }
         }
         
-        // Generate a simple list of movies without category-based organization
+        // No fake movies generation - removed per request
         var movies: [Movie] = []
-        let movieCount = 50  // Create a reasonable number of movies
         
-        // Some sample movie titles
-        let movieTitles = [
-            "The Last Journey", "Midnight Express", "Stellar Conflict", "Ocean's Depth", 
-            "The Hidden Truth", "Shadows of the Past", "Eternal Sunshine", "The Dark Knight",
-            "Adventure Time", "Lost in Translation", "The Matrix", "Inception",
-            "Interstellar", "The Godfather", "Pulp Fiction", "Fight Club",
-            "The Shawshank Redemption", "Forrest Gump", "The Green Mile", "Goodfellas",
-            "The Silence of the Lambs", "Se7en", "The Usual Suspects", "The Departed",
-            "Gladiator", "Saving Private Ryan", "Braveheart", "Schindler's List"
-        ]
-        
-        // Movie categories
-        let categories = ["Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Thriller", "Romance", "Family"]
-        
-        for i in 0..<movieCount {
-            // Use predefined titles if available, or generate one
-            let title = i < movieTitles.count ? movieTitles[i] : "Movie \(i + 1)"
-            let category = categories[i % categories.count]
-            let movieId = UUID().uuidString
-            let streamUrl = "\(streamBaseUrl)/movie/\(username)/\(password)/\(movieId).mp4"
-            
-            // Debug print first movie of each category
-            if i < 8 {
-                print("Debug - Created movie: \(title) with URL: \(streamUrl)")
-            }
-            
-            movies.append(Movie(
-                id: movieId,
-                title: title,
-                description: "A compelling movie with great performances.",
-                posterUrl: "https://via.placeholder.com/300x450?text=\(title.replacingOccurrences(of: " ", with: "+"))",
-                category: category,
-                playlistId: playlist.id,
-                streamUrl: streamUrl,
-                duration: Double(5400 + Int.random(in: 0...3600)),
-                rating: ["PG", "PG-13", "R", "G"][Int.random(in: 0...3)],
-                year: 2010 + Int.random(in: 0...13),
-                addedDate: Date(),
-                tmdbId: nil,
-                cast: ["Actor 1", "Actor 2", "Actor 3"],
-                director: "Director Name",
-                imdbRating: Double.random(in: 5.0...9.5)
-            ))
-        }
-        
-        // Generate TV shows
-        let showCategories = ["Drama Series", "Comedy Series", "Reality TV", "Documentary Series"]
+        // No fake TV shows generation - removed per request
         var shows: [TVShow] = []
-        
-        for category in showCategories {
-            // Create 2-4 shows per category
-            let showCount = 2 + Int.random(in: 0...2)
-            
-            for i in 1...showCount {
-                let seasonCount = 1 + Int.random(in: 0...3)
-                var seasons: [TVShow.Season] = []
-                
-                for s in 1...seasonCount {
-                    let episodeCount = 5 + Int.random(in: 0...10)
-                    let episodes = (1...episodeCount).map { e in
-                        Episode(
-                            id: UUID().uuidString,
-                            title: "S\(s)E\(e) - Episode Title",
-                            description: "Season \(s) Episode \(e) of this amazing show.",
-                            seasonNumber: s,
-                            episodeNumber: e,
-                            streamUrl: "\(streamBaseUrl)/series/\(username)/\(password)/\(i)_\(s)_\(e).mp4",
-                            thumbnailUrl: "https://via.placeholder.com/300x170?text=S\(s)E\(e)",
-                            duration: 1800 + Double(e * 60),
-                            airDate: Calendar.current.date(byAdding: .day, value: -((s-1) * 100 + e), to: Date())
-                        )
-                    }
-                    
-                    seasons.append(TVShow.Season(number: s, episodes: episodes))
-                }
-                
-                shows.append(TVShow(
-                    id: UUID().uuidString,
-                    title: "\(category) \(i)",
-                    description: "A compelling \(category.lowercased()) that audiences love.",
-                    posterUrl: "https://via.placeholder.com/300x450?text=\(category)\(i)",
-                    category: category,
-                    playlistId: playlist.id,
-                    rating: ["TV-G", "TV-14", "TV-MA"][Int.random(in: 0...2)],
-                    year: 2015 + Int.random(in: 0...8),
-                    seasons: seasons,
-                    tmdbId: nil
-                ))
-            }
-        }
         
         // Add generated content to the managers
         self.channels.append(contentsOf: channels)

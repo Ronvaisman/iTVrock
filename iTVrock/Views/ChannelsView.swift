@@ -16,6 +16,7 @@ struct ChannelsView: View {
     @State private var showingAddPlaylist = false
     @State private var selectedChannel: Channel? = nil
     @State private var focusedChannelIndex: Int? = nil
+    @State private var isSidebarFocused: Bool = true
     
     private var categories: [String] {
         var cats = Set(playlistManager.channels.map { channel in
@@ -51,7 +52,8 @@ struct ChannelsView: View {
             // Categories Sidebar
             ChannelSidebar(
                 categories: categories,
-                selectedCategory: $selectedCategory
+                selectedCategory: $selectedCategory,
+                isSidebarFocused: $isSidebarFocused
             )
             
             // Channel Grid
@@ -60,6 +62,7 @@ struct ChannelsView: View {
                 showingAddPlaylist: $showingAddPlaylist,
                 selectedChannel: $selectedChannel,
                 focusedChannelIndex: $focusedChannelIndex,
+                isSidebarFocused: $isSidebarFocused,
                 isEmpty: playlistManager.channels.isEmpty
             )
         }
@@ -72,9 +75,29 @@ struct ChannelsView: View {
             }
         }
         .onMoveCommand { direction in
-            if direction == .down {
-                // Focus the first channel when pressing down
-                focusedChannelIndex = 0
+            switch direction {
+            case .left:
+                // Move focus to sidebar when pressing left
+                isSidebarFocused = true
+            case .right:
+                // Move focus to channel grid when pressing right
+                if isSidebarFocused {
+                    isSidebarFocused = false
+                    // Only set focused channel if none is focused yet
+                    if focusedChannelIndex == nil && !getFilteredChannels().isEmpty {
+                        focusedChannelIndex = 0
+                    }
+                }
+            case .down:
+                // If in sidebar, move within sidebar, otherwise handle channel grid
+                if !isSidebarFocused {
+                    // Only focus first channel if none focused yet
+                    if focusedChannelIndex == nil && !getFilteredChannels().isEmpty {
+                        focusedChannelIndex = 0
+                    }
+                }
+            default:
+                break
             }
         }
     }
@@ -84,19 +107,26 @@ struct ChannelsView: View {
 struct ChannelSidebar: View {
     let categories: [String]
     @Binding var selectedCategory: String?
+    @Binding var isSidebarFocused: Bool
+    @FocusState private var focusedCategoryIndex: Int?
     
     var body: some View {
         VStack(spacing: 2) {
-            ForEach(categories, id: \.self) { category in
-                categoryButton(for: category)
+            ForEach(Array(categories.enumerated()), id: \.element) { index, category in
+                categoryButton(for: category, at: index)
             }
             Spacer()
         }
         .frame(width: 300)
         .background(Color.secondary.opacity(0.1))
+        .onChange(of: isSidebarFocused) { newValue in
+            if newValue && focusedCategoryIndex == nil && !categories.isEmpty {
+                focusedCategoryIndex = 0
+            }
+        }
     }
     
-    private func categoryButton(for category: String) -> some View {
+    private func categoryButton(for category: String, at index: Int) -> some View {
         Button(action: { selectedCategory = category }) {
             HStack {
                 Text(category)
@@ -108,7 +138,12 @@ struct ChannelSidebar: View {
             .background(selectedCategory == category ? Color.secondary.opacity(0.2) : Color.clear)
         }
         .buttonStyle(.plain)
-        .focusable(true)
+        .focused($focusedCategoryIndex, equals: index)
+        .onChange(of: focusedCategoryIndex) { newValue in
+            if newValue == index {
+                isSidebarFocused = true
+            }
+        }
     }
 }
 
@@ -118,6 +153,7 @@ struct ChannelGridContent: View {
     @Binding var showingAddPlaylist: Bool
     @Binding var selectedChannel: Channel?
     @Binding var focusedChannelIndex: Int?
+    @Binding var isSidebarFocused: Bool
     let isEmpty: Bool
     
     // Convert the channels into a simpler array for the ForEach
@@ -141,11 +177,26 @@ struct ChannelGridContent: View {
             if let newId = newValue, 
                let index = indexedChannels.firstIndex(where: { $0.id == newId }) {
                 focusedChannelIndex = index
+                if newId != nil {
+                    isSidebarFocused = false
+                }
             }
         }
         .onChange(of: focusedChannelIndex) { newValue in
             if let index = newValue, index < indexedChannels.count {
                 focusedChannelId = indexedChannels[index].id
+            }
+        }
+        .onMoveCommand { direction in
+            switch direction {
+            case .left:
+                // If user presses left on the first item of a row, move to sidebar
+                if focusedChannelIndex == 0 || focusedChannelIndex?.isMultiple(of: 3) == true {
+                    isSidebarFocused = true
+                    focusedChannelId = nil
+                }
+            default:
+                break
             }
         }
     }
@@ -188,10 +239,12 @@ struct ChannelGridContent: View {
     }
 }
 
+// MARK: - Channel Cell Component
 struct ChannelCell: View {
     let channel: Channel
     let isFocused: Bool
     let onSelect: () -> Void
+    @EnvironmentObject var favoriteManager: FavoriteManager
     @Environment(\.isFocused) private var isEnvironmentFocused
     
     // Computed property to determine if cell is focused
@@ -199,350 +252,102 @@ struct ChannelCell: View {
         isFocused || isEnvironmentFocused
     }
     
+    // Check if the channel is a favorite
+    private var isFavorite: Bool {
+        favoriteManager.favorites.contains(where: { $0.type == .channel && $0.itemId == channel.id })
+    }
+    
     var body: some View {
         Button(action: onSelect) {
-            HStack {
-                channelLogo
-                channelInfo
-                Spacer()
-            }
-            .padding()
-            .background(cellIsFocused ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.1))
-            .cornerRadius(10)
-            .scaleEffect(cellIsFocused ? 1.05 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: cellIsFocused)
-        }
-        .buttonStyle(.cardButton)
-    }
-    
-    private var channelLogo: some View {
-        Group {
-            if let logoUrl = channel.logoUrl {
-                AsyncImage(url: URL(string: logoUrl)) { image in
-                    image
-                        .resizable()
-                        .scaledToFit()
-                } placeholder: {
-                    Image(systemName: "tv")
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundColor(.secondary)
-                }
-                .frame(width: 60, height: 60)
-            } else {
-                Image(systemName: "tv")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 60, height: 60)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-    
-    private var channelInfo: some View {
-        VStack(alignment: .leading) {
-            Text(channel.name)
-                .font(.headline)
-            
-            if let currentProgram = channel.currentProgram {
-                Text(currentProgram.title)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading) {
+                // Channel thumbnail or logo
+                ChannelThumbnail(channel: channel)
+                    .frame(height: 180)
                 
-                ProgressView(value: currentProgram.progress)
-                    .progressViewStyle(.linear)
+                // Channel info
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(channel.name)
+                        .font(.headline)
+                    
+                    HStack {
+                        Text(channel.category)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        // Show icon if channel is in favorites
+                        if isFavorite {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.red)
+                        }
+                    }
+                    
+                    // Current program if available
+                    if let currentProgram = channel.currentProgram {
+                        Text("Now: \(currentProgram.title)")
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
             }
+            .background(cellIsFocused ? Color.secondary.opacity(0.3) : Color.secondary.opacity(0.1))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(cellIsFocused ? Color.blue : Color.clear, lineWidth: 4)
+            )
+            .scaleEffect(cellIsFocused ? 1.05 : 1.0)
         }
+        .buttonStyle(CardButtonStyle())
     }
 }
 
-struct ChannelPlayerView: View {
+// MARK: - Channel Thumbnail Component
+struct ChannelThumbnail: View {
     let channel: Channel
-    let onClose: () -> Void
-    @State private var player: AVPlayer? = nil
-    @State private var isPlaying: Bool = true
-    @State private var showInfo: Bool = false
-    @State private var volume: Float = 0.8
-    @State private var showControls: Bool = true
-    @Environment(\.presentationMode) private var presentationMode
-    
-    private var selectedEngine: PlayerEngine {
-        if let saved = UserDefaults.standard.string(forKey: "selectedPlayerEngine"),
-           let engine = PlayerEngine(rawValue: saved) {
-            return engine
-        }
-        return .auto
-    }
     
     var body: some View {
         ZStack {
-            // Black background for full screen
-            Color.black.ignoresSafeArea()
+            // Background color
+            Color.black
             
-            // Main content
-            VStack(spacing: 0) {
-                // Only show header if controls are visible
-                if showControls {
-                    playerHeader
+            // If channel has a logo URL, load it
+            if let logoUrl = channel.logoUrl, !logoUrl.isEmpty {
+                AsyncImage(url: URL(string: logoUrl)) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    case .failure:
+                        fallbackImage
+                    @unknown default:
+                        fallbackImage
+                    }
                 }
-                
-                // Player and controls
-                playerContent
-                    .edgesIgnoringSafeArea(.all)
+            } else {
+                fallbackImage
             }
         }
-        .background(Color.black.ignoresSafeArea())
-        .onTapGesture {
-            withAnimation {
-                showControls.toggle()
-            }
-        }
-        // Handle back button on remote
-        .onExitCommand {
-            onClose()
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 5))
     }
     
-    private var playerHeader: some View {
-        HStack {
+    private var fallbackImage: some View {
+        VStack {
+            Image(systemName: "tv")
+                .font(.system(size: 40))
             Text(channel.name)
-                .font(.title2)
-                .padding()
-            Spacer()
-        }
-        .background(Color.black.opacity(0.7))
-        .transition(.move(edge: .top))
-    }
-    
-    private var playerContent: some View {
-        ZStack {
-            // Player
-            Group {
-                switch selectedEngine {
-                case .apple, .auto:
-                    applePlayerView
-                case .vlc:
-                    vlcPlayerView
-                case .ksplayer:
-                    Text("KSPlayer integration coming soon.")
-                        .foregroundColor(.orange)
-                        .padding()
-                case .mpv:
-                    Text("MPV Player integration coming soon.")
-                        .foregroundColor(.orange)
-                        .padding()
-                case .cancel:
-                    Text("No player selected.")
-                        .foregroundColor(.gray)
-                        .padding()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            // Controls overlay
-            if showControls {
-                VStack {
-                    Spacer()
-                    
-                    // Stream info overlay
-                    if showInfo {
-                        streamInfoOverlay
-                    }
-                    
-                    // Controls bar
-                    playerControlsBar
-                        .transition(.move(edge: .bottom))
-                }
-                .transition(.opacity)
-            }
-        }
-    }
-    
-    private var streamInfoOverlay: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Channel: \(channel.name)")
-                .font(.headline)
-            Text("Category: \(channel.category)")
-            if let currentProgram = channel.currentProgram {
-                Text("Now playing: \(currentProgram.title)")
-                if let description = currentProgram.description {
-                    Text(description)
-                        .font(.caption)
-                }
-            }
-            Text("Stream URL: \(channel.streamUrl)")
                 .font(.caption)
-                .lineLimit(1)
-        }
-        .padding()
-        .background(Color.black.opacity(0.7))
-        .cornerRadius(8)
-        .padding()
-    }
-    
-    private var playerControlsBar: some View {
-        HStack(spacing: 60) {
-            // Play/Pause
-            Button(action: togglePlayPause) {
-                Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 48))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-            
-            // Stop
-            Button(action: stopPlayback) {
-                Image(systemName: "stop.circle.fill")
-                    .font(.system(size: 48))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-            
-            // Volume controls - tvOS friendly
-            HStack(spacing: 30) {
-                Button(action: decreaseVolume) {
-                    Image(systemName: "speaker.wave.1.fill")
-                        .font(.system(size: 40))
-                }
-                .buttonStyle(.plain)
-                
-                Text("\(Int(volume * 100))%")
-                    .font(.title2)
-                
-                Button(action: increaseVolume) {
-                    Image(systemName: "speaker.wave.3.fill")
-                        .font(.system(size: 40))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 20)
-            
-            // Info button
-            Button(action: { showInfo.toggle() }) {
-                Image(systemName: "info.circle.fill")
-                    .font(.system(size: 48))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 20)
-        }
-        .padding(.vertical, 30)
-        .padding(.horizontal, 40)
-        .background(Color.black.opacity(0.6))
-    }
-    
-    private func togglePlayPause() {
-        isPlaying.toggle()
-        if isPlaying {
-            player?.play()
-        } else {
-            player?.pause()
-        }
-    }
-    
-    private func stopPlayback() {
-        player?.pause()
-        player?.seek(to: .zero)
-        isPlaying = false
-    }
-    
-    private func updateVolume() {
-        player?.volume = volume
-    }
-    
-    private func increaseVolume() {
-        volume = min(1.0, volume + 0.1)
-        updateVolume()
-    }
-    
-    private func decreaseVolume() {
-        volume = max(0.0, volume - 0.1)
-        updateVolume()
-    }
-    
-    private var applePlayerView: some View {
-        Group {
-            // Try to create a valid URL from the stream
-            let validUrl = getValidStreamUrl(from: channel.streamUrl)
-            
-            if let url = validUrl {
-                VideoPlayer(player: AVPlayer(url: url))
-                    .onAppear {
-                        player = AVPlayer(url: url)
-                        player?.volume = volume
-                        if isPlaying {
-                            player?.play()
-                        }
-                    }
-                    .onDisappear {
-                        player?.pause()
-                        player = nil
-                    }
-            } else {
-                invalidStreamView
-            }
-        }
-    }
-    
-    private var vlcPlayerView: some View {
-        Group {
-            // Try to create a valid URL from the stream
-            let validUrl = getValidStreamUrl(from: channel.streamUrl)
-            
-            if let url = validUrl {
-                VLCPlayerView(url: url)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                invalidStreamView
-            }
-        }
-    }
-    
-    private var invalidStreamView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.red)
-            
-            Text("Invalid stream URL")
-                .font(.title)
-                .foregroundColor(.red)
-            
-            Text("Cannot play: \(channel.streamUrl)")
-                .font(.callout)
+                .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            Text("Check that your playlist contains valid stream URLs and try again.")
-                .font(.callout)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .padding(.horizontal, 5)
         }
-        .padding()
-    }
-    
-    // Helper function to validate and format stream URLs
-    private func getValidStreamUrl(from urlString: String) -> URL? {
-        // Try to create URL directly
-        if let url = URL(string: urlString) {
-            return url
-        }
-        
-        // Handle common issues with URLs
-        var fixedString = urlString
-        
-        // Fix missing scheme
-        if !urlString.starts(with: "http://") && !urlString.starts(with: "https://") {
-            fixedString = "http://" + urlString
-        }
-        
-        // Try with percent encoding for special characters
-        let allowedCharSet = CharacterSet.urlQueryAllowed
-        if let encodedString = fixedString.addingPercentEncoding(withAllowedCharacters: allowedCharSet) {
-            return URL(string: encodedString)
-        }
-        
-        return nil
+        .foregroundColor(.white)
     }
 }
 
