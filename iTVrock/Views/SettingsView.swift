@@ -4,6 +4,8 @@ struct SettingsView: View {
     @State private var showM3UConfig = false
     @State private var showXtreamConfig = false
     @State private var showProfileSheet = false
+    @State private var showPlaybackSettings = false
+    @State private var showEnginePrioritySettings = false
     
     enum SettingsRow: Hashable {
         case m3u, xtream, profile
@@ -43,6 +45,20 @@ struct SettingsView: View {
                         }
                         .sheet(isPresented: $showXtreamConfig) {
                             XtreamConfigView()
+                        }
+                    }
+                    Section(header: Text("Playback").font(.title2)) {
+                        Button(action: { showPlaybackSettings = true }) {
+                            Label("Player Engine", systemImage: "play.rectangle")
+                        }
+                        .sheet(isPresented: $showPlaybackSettings) {
+                            PlaybackSettingsView()
+                        }
+                        Button(action: { showEnginePrioritySettings = true }) {
+                            Label("Engine Priority", systemImage: "list.number")
+                        }
+                        .sheet(isPresented: $showEnginePrioritySettings) {
+                            EnginePrioritySettingsView()
                         }
                     }
                     Section {
@@ -663,31 +679,69 @@ struct XtreamConfigView: View {
     
     func fetchAndParseXtream(for stream: XtreamStream, completion: @escaping () -> Void) {
         isParsingM3U = true
+        // Add verbose debugging of credentials
+        print("Debug - Fetching Xtream content with:")
+        print("   Server URL: \(stream.serverUrl)")
+        print("   Username: \(stream.username)")
+        print("   Password: \(stream.password)")
+        
         let credentials = XtreamCodesCredentials(serverURL: stream.serverUrl, username: stream.username, password: stream.password)
         Task {
             do {
                 let xtreamChannels = try await XtreamCodesAPI.fetchLiveStreams(credentials: credentials)
+                // Log the first channel data to debug
+                if let firstChannel = xtreamChannels.first {
+                    print("Debug - First channel data:")
+                    print("   Name: \(firstChannel.name)")
+                    print("   Stream URL: \(firstChannel.stream_url ?? "nil")")
+                    print("   Stream ID: \(firstChannel.stream_id)")
+                }
+                
                 let channels: [Channel] = xtreamChannels.map { xc in
-                    Channel(
+                    // Construct proper URL with server/username/password if stream_url is empty or nil
+                    var streamUrl = xc.stream_url ?? ""
+                    if streamUrl.isEmpty {
+                        let server = stream.serverUrl.hasSuffix("/") ? String(stream.serverUrl.dropLast()) : stream.serverUrl
+                        streamUrl = "\(server)/live/\(stream.username)/\(stream.password)/\(xc.stream_id).ts"
+                        print("Debug - Constructed URL for empty stream_url: \(streamUrl)")
+                    }
+                    
+                    return Channel(
                         id: String(xc.stream_id),
                         name: xc.name,
                         category: xc.category_id ?? "Other",
-                        streamUrl: xc.stream_url ?? "",
+                        streamUrl: streamUrl,
                         logoUrl: xc.stream_icon,
                         tvgId: xc.epg_channel_id,
                         playlistId: stream.id
                     )
                 }
                 let xtreamMovies = try await XtreamCodesAPI.fetchMovies(credentials: credentials)
+                // Log the first movie data to debug
+                if let firstMovie = xtreamMovies.first {
+                    print("Debug - First movie data:")
+                    print("   Name: \(firstMovie.name)")
+                    print("   Direct Source: \(firstMovie.direct_source ?? "nil")")
+                    print("   Stream ID: \(firstMovie.stream_id)")
+                }
+                
                 let movies: [Movie] = xtreamMovies.map { xm in
-                    Movie(
+                    // Construct proper URL with server/username/password if direct_source is empty or nil
+                    var streamUrl = xm.direct_source ?? ""
+                    if streamUrl.isEmpty {
+                        let server = stream.serverUrl.hasSuffix("/") ? String(stream.serverUrl.dropLast()) : stream.serverUrl
+                        streamUrl = "\(server)/movie/\(stream.username)/\(stream.password)/\(xm.stream_id).mp4"
+                        print("Debug - Constructed URL for empty direct_source: \(streamUrl)")
+                    }
+                    
+                    return Movie(
                         id: String(xm.stream_id),
                         title: xm.name,
                         description: nil,
                         posterUrl: xm.stream_icon,
                         category: xm.category_id ?? "Other",
                         playlistId: stream.id,
-                        streamUrl: xm.direct_source ?? "",
+                        streamUrl: streamUrl,
                         duration: 5400,
                         rating: nil,
                         year: nil,
@@ -698,6 +752,17 @@ struct XtreamConfigView: View {
                         imdbRating: nil
                     )
                 }
+                
+                // Debug check if any URLs are empty
+                let emptyChannelUrls = channels.filter { $0.streamUrl.isEmpty }
+                let emptyMovieUrls = movies.filter { $0.streamUrl.isEmpty }
+                if !emptyChannelUrls.isEmpty {
+                    print("Warning - \(emptyChannelUrls.count) channels have empty stream URLs")
+                }
+                if !emptyMovieUrls.isEmpty {
+                    print("Warning - \(emptyMovieUrls.count) movies have empty stream URLs")
+                }
+                
                 DispatchQueue.main.async {
                     playlistManager.channels.removeAll { $0.playlistId == stream.id }
                     playlistManager.channels.append(contentsOf: channels)
@@ -707,6 +772,7 @@ struct XtreamConfigView: View {
                     completion()
                 }
             } catch {
+                print("Error - Failed to fetch Xtream content: \(error)")
                 DispatchQueue.main.async {
                     isParsingM3U = false
                     completion()
@@ -719,6 +785,13 @@ struct XtreamConfigView: View {
         isParsingM3U = true
         scanProgress = 0
         scanCancelled = false
+        
+        // Add verbose debugging of credentials
+        print("Debug - Fetching Xtream content with progress:")
+        print("   Server URL: \(stream.serverUrl)")
+        print("   Username: \(stream.username)")
+        print("   Password: \(stream.password)")
+        
         let credentials = XtreamCodesCredentials(serverURL: stream.serverUrl, username: stream.username, password: stream.password)
         Task {
             do {
@@ -727,23 +800,44 @@ struct XtreamConfigView: View {
                 var channels: [Channel] = []
                 for (i, xc) in xtreamChannels.enumerated() {
                     if scanCancelled { break }
+                    
+                    // Construct proper URL with server/username/password if stream_url is empty or nil
+                    var streamUrl = xc.stream_url ?? ""
+                    if streamUrl.isEmpty {
+                        let server = stream.serverUrl.hasSuffix("/") ? String(stream.serverUrl.dropLast()) : stream.serverUrl
+                        streamUrl = "\(server)/live/\(stream.username)/\(stream.password)/\(xc.stream_id).ts"
+                    }
+                    
                     let channel = Channel(
                         id: String(xc.stream_id),
                         name: xc.name,
                         category: xc.category_id ?? "Other",
-                        streamUrl: xc.stream_url ?? "",
+                        streamUrl: streamUrl,
                         logoUrl: xc.stream_icon,
                         tvgId: xc.epg_channel_id,
                         playlistId: stream.id
                     )
                     channels.append(channel)
                     scanProgress = Double(i+1) / Double(total)
+                    
+                    // Log the first channel URL for debugging
+                    if i == 0 {
+                        print("Debug - First channel URL: \(streamUrl)")
+                    }
                 }
                 let xtreamMovies = try await XtreamCodesAPI.fetchMovies(credentials: credentials)
                 let totalMovies = max(1, xtreamMovies.count)
                 var movies: [Movie] = []
                 for (i, xm) in xtreamMovies.enumerated() {
                     if scanCancelled { break }
+                    
+                    // Construct proper URL with server/username/password if direct_source is empty or nil
+                    var streamUrl = xm.direct_source ?? ""
+                    if streamUrl.isEmpty {
+                        let server = stream.serverUrl.hasSuffix("/") ? String(stream.serverUrl.dropLast()) : stream.serverUrl
+                        streamUrl = "\(server)/movie/\(stream.username)/\(stream.password)/\(xm.stream_id).mp4"
+                    }
+                    
                     let movie = Movie(
                         id: String(xm.stream_id),
                         title: xm.name,
@@ -751,7 +845,7 @@ struct XtreamConfigView: View {
                         posterUrl: xm.stream_icon,
                         category: xm.category_id ?? "Other",
                         playlistId: stream.id,
-                        streamUrl: xm.direct_source ?? "",
+                        streamUrl: streamUrl,
                         duration: 5400,
                         rating: nil,
                         year: nil,
@@ -763,7 +857,23 @@ struct XtreamConfigView: View {
                     )
                     movies.append(movie)
                     scanProgress = 0.5 + 0.5 * Double(i+1) / Double(totalMovies)
+                    
+                    // Log the first movie URL for debugging
+                    if i == 0 {
+                        print("Debug - First movie URL: \(streamUrl)")
+                    }
                 }
+                
+                // Debug check if any URLs are empty
+                let emptyChannelUrls = channels.filter { $0.streamUrl.isEmpty }
+                let emptyMovieUrls = movies.filter { $0.streamUrl.isEmpty }
+                if !emptyChannelUrls.isEmpty {
+                    print("Warning - \(emptyChannelUrls.count) channels have empty stream URLs")
+                }
+                if !emptyMovieUrls.isEmpty {
+                    print("Warning - \(emptyMovieUrls.count) movies have empty stream URLs")
+                }
+                
                 DispatchQueue.main.async {
                     playlistManager.channels.removeAll { $0.playlistId == stream.id }
                     playlistManager.channels.append(contentsOf: channels)
@@ -773,6 +883,7 @@ struct XtreamConfigView: View {
                     completion()
                 }
             } catch {
+                print("Error - Failed to fetch Xtream content with progress: \(error)")
                 DispatchQueue.main.async {
                     isParsingM3U = false
                     completion()
@@ -890,7 +1001,7 @@ struct XtreamConfigView: View {
                     
                     Text("Password")
                         .font(.headline)
-                    SecureField("Enter password", text: $password)
+                    TextField("Enter password", text: $password)
                         .padding(8)
                         .background(Color.secondary.opacity(0.2))
                         .cornerRadius(10)

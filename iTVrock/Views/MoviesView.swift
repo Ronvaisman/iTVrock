@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 
 // MARK: - Models for passing around movie data
 private struct IndexedMovie: Identifiable {
@@ -65,16 +66,32 @@ struct MoviesView: View {
             }
         }
         .sheet(item: $selectedMovie) { movie in
-            ChannelPlayerView(channel: Channel(
-                id: movie.id,
-                name: movie.title,
-                category: movie.category,
-                streamUrl: movie.streamUrl,
-                logoUrl: movie.posterUrl,
-                tvgId: nil,
-                playlistId: movie.playlistId
-            )) {
-                selectedMovie = nil
+            // Wrap everything in a VStack to ensure it's a proper View
+            VStack {
+                // Debug movie URL before passing to channel player
+                // These print statements don't return Views and need to be moved outside or handled
+                // separately from the View hierarchy
+                
+                // Create a channel object from movie data
+                let channelFromMovie = Channel(
+                    id: movie.id,
+                    name: movie.title,
+                    category: movie.category,
+                    streamUrl: movie.streamUrl,
+                    logoUrl: movie.posterUrl,
+                    tvgId: nil,
+                    playlistId: movie.playlistId,
+                    order: 0,
+                    catchupAvailable: false
+                )
+                
+                ChannelPlayerView(channel: channelFromMovie) {
+                    // Debug prints
+                    print("Debug - Playing movie with URL: \(movie.streamUrl)")
+                    print("Debug - Channel created for movie playback with URL: \(channelFromMovie.streamUrl)")
+                    selectedMovie = nil
+                }
+                .edgesIgnoringSafeArea(.all)
             }
         }
         .onMoveCommand { direction in
@@ -132,11 +149,22 @@ struct MovieGridContent: View {
     
     // Break up the view into smaller components
     private var noMoviesView: some View {
-        ContentUnavailableView(
-            "No Movies Found",
-            systemImage: "film",
-            description: Text("Try adjusting your search or category filter")
-        )
+        VStack(spacing: 20) {
+            Image(systemName: "film")
+                .font(.system(size: 50))
+                .foregroundColor(.gray)
+            
+            Text("No Movies Found")
+                .font(.title)
+                .foregroundColor(.white)
+            
+            Text("Try adjusting your search or category filter")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var moviesGridView: some View {
@@ -242,7 +270,7 @@ struct MovieCell: View {
             .scaleEffect(isFocused ? 1.05 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: isFocused)
         }
-        .buttonStyle(.cardButton)
+        .buttonStyle(CardButtonStyle())
     }
     
     private var posterView: some View {
@@ -275,21 +303,6 @@ struct MovieCell: View {
             .font(.headline)
             .lineLimit(2)
             .multilineTextAlignment(.center)
-    }
-}
-
-// Custom button style to make it work better on tvOS
-struct CardButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .contentShape(Rectangle())
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-    }
-}
-
-extension ButtonStyle where Self == CardButtonStyle {
-    static var cardButton: CardButtonStyle {
-        CardButtonStyle()
     }
 }
 
